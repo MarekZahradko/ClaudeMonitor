@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -uo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_NAME="ClaudeMonitor"
@@ -17,7 +17,20 @@ swift "${PROJECT_DIR}/scripts/generate-xcstrings.swift" "${PROJECT_DIR}/ClaudeMo
 
 echo "Running ${APP_NAME} tests..."
 cd "${PROJECT_DIR}"
-swift build --product "${PRODUCT}"
-"$(swift build --product "${PRODUCT}" --show-bin-path)/${PRODUCT}"
+swift build --product "${PRODUCT}" || exit 1
 
-echo "Done."
+BIN="$(swift build --product "${PRODUCT}" --show-bin-path)/${PRODUCT}"
+LOG="$(mktemp)"
+trap 'rm -f "${LOG}"' EXIT
+
+"${BIN}" 2>&1 | tee "${LOG}"
+STATUS="${PIPESTATUS[0]}"
+
+if [ "${STATUS}" -ne 0 ]; then
+    echo ""
+    echo "==> Failed test details:"
+    # Drop the run-summary "✘" line (no location/expectation detail); keep per-issue ones.
+    grep "✘" "${LOG}" | grep -v "^✘ Test run with " || true
+fi
+
+exit "${STATUS}"
