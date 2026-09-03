@@ -48,7 +48,6 @@ import Testing
                 "five_hour values leaked into seven_day: \(fiveHourValues.intersection(sevenDayValues))")
         #expect(fiveHourValues.intersection(sonnetValues).isEmpty,
                 "five_hour values leaked into seven_day_sonnet: \(fiveHourValues.intersection(sonnetValues))")
-        await fixture.cleanup()
     }
 
     @Test @MainActor func recordPreservesExactUtilizationValues() async {
@@ -71,7 +70,6 @@ import Testing
             #expect(samples[i].utilization == util,
                     "Sample \(i) expected \(util), got \(samples[i].utilization)")
         }
-        await fixture.cleanup()
     }
 
     @Test @MainActor func recordWithAllThreeWindowsStoresCorrectCounts() async {
@@ -98,7 +96,6 @@ import Testing
         #expect(history.samples(for: fiveHourEntry).count == 10)
         #expect(history.samples(for: sevenDayEntry).count == 10)
         #expect(history.samples(for: sonnetEntry).count == 10)
-        await fixture.cleanup()
     }
 
     @Test @MainActor func recordTimestampsAreExactlyAsProvided() async {
@@ -125,7 +122,6 @@ import Testing
             #expect(samples[i].timestamp == expected,
                     "Timestamp \(i) was modified: expected \(expected), got \(samples[i].timestamp)")
         }
-        await fixture.cleanup()
     }
 
     @Test @MainActor func identityIsDeterministic() {
@@ -182,7 +178,6 @@ import Testing
         let sonnetValues = Set(sonnetSamples.map { $0.utilization })
         #expect(sevenDayValues.intersection(sonnetValues).isEmpty,
                 "Data leaked between seven_day and seven_day_sonnet: \(sevenDayValues.intersection(sonnetValues))")
-        await fixture.cleanup()
     }
 
     @Test @MainActor func recordThenSaveThenLoadRoundTrips() async throws {
@@ -243,22 +238,25 @@ import Testing
         for (orig, restored) in zip(originalSonnet, loadedSonnet) {
             #expect(orig.utilization == restored.utilization)
         }
-        await fixture.cleanup()
     }
 
-    @Test @MainActor func windowBoundaryPruningDoesNotAffectOtherWindows() async {
+    // Ownership is by explicit WindowInstance, not a derived window boundary: recording
+    // into one identity with a changed resets_at (without going through
+    // detectAndHandleReset's archive-and-reset) must never affect a different identity,
+    // and never silently drops the identity's own prior samples either.
+    @Test @MainActor func recordingAcrossIdentitiesNeverCrossContaminates() async {
         let fixture = UsageHistoryTestFixture()
         let history = fixture.history
         let now = Date()
         let fiveHourResetsAt = now.addingTimeInterval(3600)
         let sevenDayResetsAt = now.addingTimeInterval(86400)
 
-        let oldWindowStart = now.addingTimeInterval(-20000)
+        let earlier = now.addingTimeInterval(-20000)
         let fiveHourEntryOld = makeEntry(key: "five_hour", utilization: 15, resetsAt: fiveHourResetsAt)
-        history.record(entries: [fiveHourEntryOld], at: oldWindowStart)
+        history.record(entries: [fiveHourEntryOld], at: earlier)
 
         let sevenDayEntryOld = makeEntry(key: "seven_day", utilization: 25, resetsAt: sevenDayResetsAt)
-        history.record(entries: [sevenDayEntryOld], at: oldWindowStart)
+        history.record(entries: [sevenDayEntryOld], at: earlier)
 
         let newFiveHourResetsAt = now.addingTimeInterval(1800)
         let fiveHourEntryNew = makeEntry(key: "five_hour", utilization: 20, resetsAt: newFiveHourResetsAt)
@@ -268,17 +266,14 @@ import Testing
         let fiveHourSamples = history.samples(for: fiveHourEntryNew)
         let sevenDaySamples = history.samples(for: sevenDayEntryNew)
 
-        for sample in fiveHourSamples {
-            #expect(sample.utilization != 15,
-                    "Pruned five_hour sample (util=15) still present after window boundary moved")
-        }
+        #expect(fiveHourSamples.contains(where: { $0.utilization == 15 }),
+                "record() no longer prunes by derived window boundary — prior sample must remain")
         #expect(fiveHourSamples.contains(where: { $0.utilization == 20 }),
                 "New five_hour sample (util=20) should be present")
 
         #expect(sevenDaySamples.contains(where: { $0.utilization == 25 }),
-                "seven_day sample (util=25) should not be pruned — it is within its window")
+                "seven_day sample (util=25) should not be affected by five_hour recording")
         #expect(sevenDaySamples.contains(where: { $0.utilization == 30 }),
                 "New seven_day sample (util=30) should be present")
-        await fixture.cleanup()
     }
 }

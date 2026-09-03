@@ -34,6 +34,7 @@ enum MenuBuilder {
 
     // Controls items
     static let updatedTag = 200
+    static let historyHealthTag = 210
     static let refreshTag = 601
     static let preferencesTag = 602
     static let aboutTag = 603

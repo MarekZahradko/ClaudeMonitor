@@ -7,23 +7,40 @@ import AppKit
 final class UsageRowView: NSView {
     private let textField: NSTextField
     var onClick: (() -> Void)?
-    private var isHighlighted = false
+    /// Hover / keyboard highlight, written only by `MenuBuilder.syncHighlight` from
+    /// `NSMenuDelegate.menu(_:willHighlight:)` — AppKit decides which row is highlighted.
+    ///
+    /// The row deliberately keeps no tracking area of its own. A self-tracked flag gets stuck
+    /// on: AppKit delivers no `mouseExited` when the menu closes under the cursor or when the
+    /// row is clicked, and `reconcile` reuses these views for the life of the app, so the stale
+    /// highlight then reappears the next time the menu opens — alongside the row actually being
+    /// hovered. `NSMenuItem.isHighlighted` is not KVO-compliant either (an observer on it never
+    /// fires), which leaves the delegate callback as the one signal a view-based row can trust.
+    var isHighlighted = false {
+        didSet {
+            guard oldValue != isHighlighted else { return }
+            needsDisplay = true
+        }
+    }
     var isSelected = false {
         didSet { needsDisplay = true }
     }
-    private var menuItemObservation: NSKeyValueObservation?
 
     private static let selectionBarWidth: CGFloat = 3
     private static let leftPadding: CGFloat = 17  // standard menu item left margin
     private static let rightPadding: CGFloat = 14
     private static let verticalPadding: CGFloat = 3
 
+    private static func requiredWidth(for attributedTitle: NSAttributedString) -> CGFloat {
+        attributedTitle.size().width + leftPadding + rightPadding + selectionBarWidth
+    }
+
     init(attributedTitle: NSAttributedString) {
         textField = NSTextField(labelWithAttributedString: attributedTitle)
         textField.isSelectable = false
         let textSize = attributedTitle.size()
         let height = textSize.height + UsageRowView.verticalPadding * 2
-        let width = textSize.width + UsageRowView.leftPadding + UsageRowView.rightPadding + UsageRowView.selectionBarWidth
+        let width = UsageRowView.requiredWidth(for: attributedTitle)
         super.init(frame: NSRect(x: 0, y: 0, width: width, height: height))
         textField.frame = NSRect(
             x: UsageRowView.leftPadding + UsageRowView.selectionBarWidth,
@@ -31,36 +48,13 @@ final class UsageRowView: NSView {
             width: textSize.width + UsageRowView.rightPadding,
             height: textSize.height
         )
+        autoresizingMask = .width
         addSubview(textField)
-        updateTrackingAreas()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        for area in trackingAreas { removeTrackingArea(area) }
-        let area = NSTrackingArea(
-            rect: bounds,
-            options: [.mouseEnteredAndExited, .activeAlways],
-            owner: self,
-            userInfo: nil
-        )
-        addTrackingArea(area)
-    }
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        menuItemObservation = enclosingMenuItem?.observe(\.isHighlighted, options: []) { [weak self] _, _ in
-            // AppKit fires KVO on the main thread; assumeIsolated avoids an unnecessary hop.
-            MainActor.assumeIsolated { self?.needsDisplay = true }
-        }
-    }
-
-    override func mouseEntered(with event: NSEvent) { isHighlighted = true; needsDisplay = true }
-    override func mouseExited(with event: NSEvent) { isHighlighted = false; needsDisplay = true }
 
     override var acceptsFirstResponder: Bool { true }
 
@@ -77,19 +71,20 @@ final class UsageRowView: NSView {
         }
     }
 
+    /// Grows the row to fit `attributedTitle`, never shrinks it: the width reserved for the
+    /// widest countdown text has to survive live updates, and the menu stretches the row to the
+    /// full row width once it lays the item out.
     func ensureFrameWidth(for attributedTitle: NSAttributedString) {
-        let needed = attributedTitle.size().width + UsageRowView.leftPadding + UsageRowView.rightPadding + UsageRowView.selectionBarWidth
+        let needed = UsageRowView.requiredWidth(for: attributedTitle)
         guard needed > frame.size.width else { return }
-        let extra = needed - frame.size.width
-        textField.frame.size.width += extra
+        textField.frame.size.width += needed - frame.size.width
         frame.size.width = needed
     }
 
     func updateTitle(_ attributedTitle: NSAttributedString) {
         textField.attributedStringValue = attributedTitle
-        let textSize = attributedTitle.size()
-        textField.frame.size.width = textSize.width + UsageRowView.rightPadding
-        frame.size.width = textSize.width + UsageRowView.leftPadding + UsageRowView.rightPadding + UsageRowView.selectionBarWidth
+        textField.frame.size.width = attributedTitle.size().width + UsageRowView.rightPadding
+        ensureFrameWidth(for: attributedTitle)
     }
 
     /// Returns the current attributed title of the row.
@@ -99,9 +94,9 @@ final class UsageRowView: NSView {
     var textContent: String { textField.attributedStringValue.string }
 
     override func draw(_ dirtyRect: NSRect) {
-        if isHighlighted || enclosingMenuItem?.isHighlighted == true {
+        if isHighlighted {
             NSColor.selectedContentBackgroundColor.withAlphaComponent(0.15).setFill()
-            dirtyRect.fill()
+            bounds.fill()
         }
         if isSelected {
             NSColor.controlAccentColor.setFill()

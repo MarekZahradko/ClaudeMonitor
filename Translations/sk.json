@@ -50,8 +50,8 @@
   "error.rate_limited": "Obmedzenie — príliš veľa požiadaviek",
   "error.unauthorized": "Relácia vypršala — aktualizujte Cookie v Nastaveniach",
   "error.unexpected_status": "Neočakávaný HTTP %1$ld",
+  "graph.credit.description": "kredit využitia: %1$ld%% → %2$ld%%",
   "graph.now": "teraz",
-  "graph.placeholder": "Žiadne údaje o resete",
   "graph.stats.blocked": "zablokované · obnoví sa v %1$@",
   "graph.stats.blocked_date": "zablokované · obnoví sa %1$@",
   "graph.stats.collecting": "zber údajov…",
@@ -85,6 +85,21 @@
   "prefs.button.save": "Uložiť",
   "prefs.launch_at_login": "Spustiť pri prihlásení",
   "prefs.reset_sound": "Prehrať zvuk pri resete kritického limitu",
+  "prefs.retention.label": "Uchovávať históriu používania (roky):",
+  "prefs.retention.confirm.title": "Odstrániť archivovanú históriu?",
+  "prefs.retention.confirm.years_phrase": {
+    "one": "%1$ld rok",
+    "few": "%1$ld roky",
+    "other": "%1$ld rokov"
+  },
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld archivované okno",
+    "few": "%1$ld archivované okná",
+    "other": "%1$ld archivovaných okien"
+  },
+  "prefs.retention.confirm.message": "Skrátením doby uchovávania na %1$@ sa natrvalo odstráni %2$@. Túto akciu nemožno vrátiť späť.",
+  "prefs.retention.confirm.delete_button": "Odstrániť",
+  "prefs.retention.confirm.cancel_button": "Zrušiť",
   "prefs.window.title": "Claude Monitor – Nastavenia",
   "setup.button.skip": "Preskočiť",
   "setup.button.start": "Začať",
@@ -96,5 +111,11 @@
   "status.operational": "Funkčné",
   "status.partial_outage": "Čiastočný výpadok",
   "status.unknown": "Neznámy",
-  "window.scope.all": "všetko"
+  "window.scope.all": "všetko",
+  "menu.history.saveFailing": "Ukladanie histórie zlyháva (od %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld karanténny súbor histórie",
+    "few": "%1$ld karanténne súbory histórie",
+    "other": "%1$ld karanténnych súborov histórie"
+  }
 }

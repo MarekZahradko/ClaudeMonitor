@@ -2,6 +2,30 @@ import AppKit
 import Foundation
 
 enum Formatting {
+    enum AbsoluteTimeStyle {
+        case hourMinute
+        case hourMinuteSecond
+        case dateHourMinute
+    }
+
+    /// `Date.FormatStyle` (`.formatted(...)`) returns an EMPTY string under region-override
+    /// locales such as `en_CA@rg=czzzzz` (language English-Canada, region Czechia) — a common
+    /// macOS setup. `DateFormatter` with `setLocalizedDateFormatFromTemplate` does not have this
+    /// bug and correctly honours the region override. Do not "modernise" this back to
+    /// `Date.FormatStyle` — it will silently blank out every absolute time shown to the user.
+    nonisolated static func absoluteTime(_ date: Date, _ style: AbsoluteTimeStyle) -> String {
+        let template: String
+        switch style {
+        case .hourMinute: template = "jmm"
+        case .hourMinuteSecond: template = "jmmss"
+        case .dateHourMinute: template = "yMMMdjmm"
+        }
+        let formatter = DateFormatter()
+        formatter.locale = .autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate(template)
+        return formatter.string(from: date)
+    }
+
     static func timeUntil(_ date: Date, now: Date = Date()) -> String {
         timeUntil(date.timeIntervalSince(now))
     }
@@ -91,16 +115,30 @@ enum Formatting {
         return "< 1%/d"
     }
 
+    /// When `analysis.events` is non-empty, the most recent credit's description is appended
+    /// so the row explains why the graph shows a drop that is not a window boundary.
     static func statsLabelText(analysis: WindowAnalysis, now: Date) -> String {
+        let base = statsLabelTextCore(analysis: analysis, now: now)
+        guard let mostRecent = analysis.events.max(by: { $0.at < $1.at }) else { return base }
+        let credit = creditDescription(for: mostRecent)
+        return base.isEmpty ? credit : "\(base) · \(credit)"
+    }
+
+    /// Factual, short description of a single usage-credit event — e.g. "usage credit: 32% →
+    /// 0%" — never invents a reason Anthropic granted it.
+    static func creditDescription(for event: UsageEvent) -> String {
+        String(format: String(localized: "graph.credit.description", bundle: .module), event.from, event.to)
+    }
+
+    private static func statsLabelTextCore(analysis: WindowAnalysis, now: Date) -> String {
         let util = analysis.entry.window.utilization
         guard let resetsAt = analysis.entry.window.resetsAt else { return "" }
 
         if util >= 100 {
-            let key = Calendar.current.isDateInToday(resetsAt) ? "graph.stats.blocked" : "graph.stats.blocked_date"
-            let fmt: Date.FormatStyle = Calendar.current.isDateInToday(resetsAt)
-                ? Date.FormatStyle().hour().minute().locale(.autoupdatingCurrent)
-                : Date.FormatStyle().day().month().year().hour().minute().locale(.autoupdatingCurrent)
-            return String(format: String(localized: String.LocalizationValue(key), bundle: .module), resetsAt.formatted(fmt))
+            let isToday = Calendar.current.isDateInToday(resetsAt)
+            let key = isToday ? "graph.stats.blocked" : "graph.stats.blocked_date"
+            let timeStr = absoluteTime(resetsAt, isToday ? .hourMinute : .dateHourMinute)
+            return String(format: String(localized: String.LocalizationValue(key), bundle: .module), timeStr)
         }
 
         guard analysis.rateSource != .insufficient else {
@@ -128,11 +166,10 @@ enum Formatting {
         }
 
         let limitHitAt = now.addingTimeInterval(ttl)
-        let key = Calendar.current.isDateInToday(limitHitAt) ? "graph.stats.limit_soon_timed" : "graph.stats.limit_soon_timed_date"
-        let fmt: Date.FormatStyle = Calendar.current.isDateInToday(limitHitAt)
-            ? Date.FormatStyle().hour().minute().locale(.autoupdatingCurrent)
-            : Date.FormatStyle().day().month().year().hour().minute().locale(.autoupdatingCurrent)
-        return String(format: String(localized: String.LocalizationValue(key), bundle: .module), rateStr, beforeResetStr, limitHitAt.formatted(fmt))
+        let isToday = Calendar.current.isDateInToday(limitHitAt)
+        let key = isToday ? "graph.stats.limit_soon_timed" : "graph.stats.limit_soon_timed_date"
+        let timeStr = absoluteTime(limitHitAt, isToday ? .hourMinute : .dateHourMinute)
+        return String(format: String(localized: String.LocalizationValue(key), bundle: .module), rateStr, beforeResetStr, timeStr)
     }
 
     static let barImageWidth: CGFloat = 120

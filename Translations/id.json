@@ -50,8 +50,8 @@
   "error.rate_limited": "Dibatasi – terlalu banyak permintaan",
   "error.unauthorized": "Sesi kedaluwarsa – perbarui cookie di Preferensi",
   "error.unexpected_status": "HTTP %1$ld tidak terduga",
+  "graph.credit.description": "kredit penggunaan: %1$ld%% → %2$ld%%",
   "graph.now": "sekarang",
-  "graph.placeholder": "Tidak ada data reset",
   "graph.stats.blocked": "diblokir · reset pada %1$@",
   "graph.stats.blocked_date": "diblokir · reset %1$@",
   "graph.stats.collecting": "mengumpulkan data…",
@@ -85,6 +85,13 @@
   "prefs.button.save": "Simpan",
   "prefs.launch_at_login": "Jalankan saat masuk",
   "prefs.reset_sound": "Putar suara saat batas kritis direset",
+  "prefs.retention.label": "Simpan riwayat penggunaan (tahun):",
+  "prefs.retention.confirm.title": "Hapus Riwayat yang Diarsipkan?",
+  "prefs.retention.confirm.years_phrase": "%1$ld tahun",
+  "prefs.retention.confirm.windows_phrase": "%1$ld jendela penggunaan yang diarsipkan",
+  "prefs.retention.confirm.message": "Mengurangi retensi menjadi %1$@ akan menghapus %2$@ secara permanen. Tindakan ini tidak dapat dibatalkan.",
+  "prefs.retention.confirm.delete_button": "Hapus",
+  "prefs.retention.confirm.cancel_button": "Batal",
   "prefs.window.title": "Claude Monitor – Preferensi",
   "setup.button.skip": "Lewati",
   "setup.button.start": "Mulai",
@@ -96,5 +103,9 @@
   "status.operational": "Beroperasi",
   "status.partial_outage": "Gangguan Sebagian",
   "status.unknown": "Tidak Diketahui",
-  "window.scope.all": "semua"
+  "window.scope.all": "semua",
+  "menu.history.saveFailing": "Penyimpanan riwayat gagal (sejak %@)",
+  "menu.history.quarantinedCount": {
+    "other": "%1$ld file riwayat yang dikarantina"
+  }
 }

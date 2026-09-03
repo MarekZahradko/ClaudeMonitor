@@ -54,10 +54,30 @@ struct ServiceHealth: Sendable, Equatable {
     }
 }
 
+/// Mirrors `UsageHistory`'s persistence-failure and quarantine-count state (Defect 5/4) into
+/// the value-type state pipeline, so the menu layer can surface it without reaching into
+/// `usageHistory` directly.
+struct HistoryHealth: Sendable, Equatable {
+    let lastSaveSucceeded: Bool
+    let persistenceFailingSince: Date?
+    let quarantinedFileCount: Int
+
+    init(
+        lastSaveSucceeded: Bool = true,
+        persistenceFailingSince: Date? = nil,
+        quarantinedFileCount: Int = 0
+    ) {
+        self.lastSaveSucceeded = lastSaveSucceeded
+        self.persistenceFailingSince = persistenceFailingSince
+        self.quarantinedFileCount = quarantinedFileCount
+    }
+}
+
 struct MonitorState: Sendable, Equatable {
     let usage: UsageSnapshot
     let service: ServiceHealth
     let polling: PollingState
+    let history: HistoryHealth
     let lastRefreshed: Date?
     let hasCredentials: Bool
 
@@ -65,12 +85,14 @@ struct MonitorState: Sendable, Equatable {
         usage: UsageSnapshot = UsageSnapshot(),
         service: ServiceHealth = ServiceHealth(),
         polling: PollingState = PollingState(),
+        history: HistoryHealth = HistoryHealth(),
         lastRefreshed: Date? = nil,
         hasCredentials: Bool = false
     ) {
         self.usage = usage
         self.service = service
         self.polling = polling
+        self.history = history
         self.lastRefreshed = lastRefreshed
         self.hasCredentials = hasCredentials
     }

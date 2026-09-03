@@ -2,85 +2,66 @@ import Testing
 import Foundation
 @testable import ClaudeMonitor
 
-struct CriticalResetTests {
+/// `Formatting.detectCriticalReset` no longer re-derives a boundary from raw `resets_at`
+/// timestamps — `UsageHistory.detectAndHandleReset` is the single source of truth for that
+/// (see its doc comment and ResetDetectionTests). This suite exercises the remaining
+/// "was it critical" lookup: given a set of previously-computed `WindowAnalysis` values and
+/// the keys that had a genuine boundary this cycle, was any of them critical beforehand.
+@MainActor struct CriticalResetTests {
 
-    // MARK: - detectCriticalReset
-
-    @Test func detectsResetWhenPreviousWasCritical() {
-        let now = Date()
-        let duration: TimeInterval = 18000
-
-        // 65% used, 50% remaining → projected = 65 + (65/9000)*9000 = 130 → critical
-        // current resetsAt = prevReset + duration (new window after reset), difference = 18000 > 9000 ✓
-        let prevReset = now.addingTimeInterval(9000)
-        let previous = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: duration, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 65, resetsAt: prevReset))
-        ])
-        let current = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: duration, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 5, resetsAt: prevReset.addingTimeInterval(duration)))
-        ])
-
-        #expect(Formatting.detectCriticalReset(previous: previous, current: current))
+    private func analysis(key: String, utilization: Int, resetsAt: Date, duration: TimeInterval, now: Date) -> WindowAnalysis {
+        let entry = WindowEntry(key: key, duration: duration, durationLabel: "d", modelScope: nil,
+                                 window: UsageWindow(utilization: utilization, resetsAt: resetsAt))
+        return UsageHistory.analyze(entry: entry, samples: [], now: now)
     }
 
-    @Test func noResetWhenTimestampsDontJump() {
+    @Test func firesWhenPreviousWasCriticalAndBoundaryIsGenuine() {
         let now = Date()
         let duration: TimeInterval = 18000
+        // 65% used, 50% remaining → projected = 130% → critical.
+        let prevReset = now.addingTimeInterval(9000)
+        let previous = [analysis(key: "five_hour", utilization: 65, resetsAt: prevReset, duration: duration, now: now)]
 
-        let previous = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: duration, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 90, resetsAt: now.addingTimeInterval(1000)))
-        ])
-        let current = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: duration, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 88, resetsAt: now.addingTimeInterval(940)))
-        ])
+        #expect(Formatting.detectCriticalReset(previousAnalyses: previous, genuineBoundaryKeys: ["five_hour"]))
+    }
 
-        #expect(!Formatting.detectCriticalReset(previous: previous, current: current))
+    @Test func doesNotFireWithoutAGenuineBoundaryEvenIfPreviousWasCritical() {
+        let now = Date()
+        let duration: TimeInterval = 18000
+        let prevReset = now.addingTimeInterval(9000)
+        let previous = [analysis(key: "five_hour", utilization: 65, resetsAt: prevReset, duration: duration, now: now)]
+
+        // No key in genuineBoundaryKeys — e.g. a 90s resets_at nudge inside the old 9000s
+        // band that is drift, not a real boundary. This band had zero test coverage before
+        // the Task 5 fix, which is exactly why the regression escaped.
+        #expect(!Formatting.detectCriticalReset(previousAnalyses: previous, genuineBoundaryKeys: []))
     }
 
     @Test func resetNotDetectedWhenPreviousWasNotCritical() {
         let now = Date()
         let duration: TimeInterval = 18000
+        let prevReset = now.addingTimeInterval(10000)
+        let previous = [analysis(key: "five_hour", utilization: 30, resetsAt: prevReset, duration: duration, now: now)]
 
-        let previous = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: duration, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 30, resetsAt: now.addingTimeInterval(10000)))
-        ])
-        let current = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: duration, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 5, resetsAt: now.addingTimeInterval(duration)))
-        ])
-
-        #expect(!Formatting.detectCriticalReset(previous: previous, current: current))
+        #expect(!Formatting.detectCriticalReset(previousAnalyses: previous, genuineBoundaryKeys: ["five_hour"]))
     }
 
     @Test func unmatchedKeysAreIgnored() {
         let now = Date()
+        let duration: TimeInterval = 18000
+        let previous = [analysis(key: "five_hour", utilization: 90, resetsAt: now.addingTimeInterval(1000), duration: duration, now: now)]
 
-        let previous = UsageResponse(entries: [
-            .make(key: "five_hour", utilization: 90, resetsAt: now.addingTimeInterval(1000))!
-        ])
-        let current = UsageResponse(entries: [
-            .make(key: "seven_day", utilization: 5, resetsAt: now.addingTimeInterval(604_800))!
-        ])
-
-        #expect(!Formatting.detectCriticalReset(previous: previous, current: current))
+        #expect(!Formatting.detectCriticalReset(previousAnalyses: previous, genuineBoundaryKeys: ["seven_day"]))
     }
 
     @Test func missingResetDatesAreSkipped() {
-        let previous = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: 18000, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 90, resetsAt: nil))
-        ])
-        let current = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: 18000, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 5, resetsAt: Date().addingTimeInterval(18000)))
-        ])
+        let entry = WindowEntry(key: "five_hour", duration: 18000, durationLabel: "5h", modelScope: nil,
+                                 window: UsageWindow(utilization: 90, resetsAt: nil))
+        let previous = [UsageHistory.analyze(entry: entry, samples: [], now: Date())]
 
-        #expect(!Formatting.detectCriticalReset(previous: previous, current: current))
+        // No resetsAt → fallback style: utilization 90 is below the fallback critical
+        // threshold (95), so not critical.
+        #expect(!Formatting.detectCriticalReset(previousAnalyses: previous, genuineBoundaryKeys: ["five_hour"]))
     }
 
     @Test func resetDetectedOnAnyMatchingCriticalWindow() {
@@ -88,72 +69,37 @@ struct CriticalResetTests {
         let fiveHour: TimeInterval = 18000
         let sevenDay: TimeInterval = 604_800
 
-        // five_hour: 30% used, not critical.
-        // seven_day: 65% used, 50% remaining → projected=130% → critical
-        // current seven_day resetsAt = prevReset + sevenDay, difference = sevenDay > sevenDay/2 ✓
-        let sevenDayPrevReset = now.addingTimeInterval(sevenDay * 0.5)
-        let previous = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: fiveHour, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 30, resetsAt: now.addingTimeInterval(1000))),
-            WindowEntry(key: "seven_day", duration: sevenDay, durationLabel: "7d", modelScope: nil,
-                        window: UsageWindow(utilization: 65, resetsAt: sevenDayPrevReset)),
-        ])
-        let current = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: fiveHour, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 28, resetsAt: now.addingTimeInterval(940))),
-            WindowEntry(key: "seven_day", duration: sevenDay, durationLabel: "7d", modelScope: nil,
-                        window: UsageWindow(utilization: 5, resetsAt: sevenDayPrevReset.addingTimeInterval(sevenDay))),
-        ])
+        // five_hour: 30% used, not critical. seven_day: 65% used, 50% remaining → critical.
+        let previous = [
+            analysis(key: "five_hour", utilization: 30, resetsAt: now.addingTimeInterval(1000), duration: fiveHour, now: now),
+            analysis(key: "seven_day", utilization: 65, resetsAt: now.addingTimeInterval(sevenDay * 0.5), duration: sevenDay, now: now),
+        ]
 
-        #expect(Formatting.detectCriticalReset(previous: previous, current: current))
+        #expect(Formatting.detectCriticalReset(previousAnalyses: previous, genuineBoundaryKeys: ["seven_day"]))
     }
 
     @Test func criticalByProjectionAlsoTriggersReset() {
         let now = Date()
         let duration: TimeInterval = 18000
-        // 78% used, 60% remaining → elapsed=40%, rate=78/7200, projected=78+(78/7200)*10800=195% → critical
+        // 78% used, 60% remaining → projected ≈ 195% → critical.
         let previousResets = now.addingTimeInterval(duration * 0.6)
+        let previous = [analysis(key: "five_hour", utilization: 78, resetsAt: previousResets, duration: duration, now: now)]
 
-        let previous = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: duration, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 78, resetsAt: previousResets))
-        ])
-        let current = UsageResponse(entries: [
-            // After reset: new window gets full duration FROM the reset point
-            WindowEntry(key: "five_hour", duration: duration, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 5, resetsAt: previousResets.addingTimeInterval(duration)))
-        ])
-
-        #expect(Formatting.detectCriticalReset(previous: previous, current: current))
+        #expect(Formatting.detectCriticalReset(previousAnalyses: previous, genuineBoundaryKeys: ["five_hour"]))
     }
 
     @Test func exactBoundaryProjection120IsCritical() {
-        // utilization=60, 50% time remaining (9000s of 18000s) → projected = 60 + (60/9000)*9000 = 120.0 exactly
-        // >= 120 threshold → critical → reset should be detected
+        // utilization=60, 50% time remaining → projected = 120.0 exactly → critical.
         let now = Date()
         let duration: TimeInterval = 18000
         let prevReset = now.addingTimeInterval(9000)
+        let previous = [analysis(key: "five_hour", utilization: 60, resetsAt: prevReset, duration: duration, now: now)]
 
-        let previous = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: duration, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 60, resetsAt: prevReset))
-        ])
-        let current = UsageResponse(entries: [
-            WindowEntry(key: "five_hour", duration: duration, durationLabel: "5h", modelScope: nil,
-                        window: UsageWindow(utilization: 5, resetsAt: prevReset.addingTimeInterval(duration)))
-        ])
-
-        #expect(Formatting.detectCriticalReset(previous: previous, current: current, now: now))
+        #expect(Formatting.detectCriticalReset(previousAnalyses: previous, genuineBoundaryKeys: ["five_hour"]))
     }
 
-    @Test func emptyResponses() {
-        let empty = UsageResponse(entries: [])
-        let nonEmpty = UsageResponse(entries: [
-            .make(key: "five_hour", utilization: 85, resetsAt: Date().addingTimeInterval(18000))!
-        ])
-        #expect(!Formatting.detectCriticalReset(previous: empty, current: nonEmpty))
-        #expect(!Formatting.detectCriticalReset(previous: nonEmpty, current: empty))
-        #expect(!Formatting.detectCriticalReset(previous: empty, current: empty))
+    @Test func emptyInputs() {
+        #expect(!Formatting.detectCriticalReset(previousAnalyses: [], genuineBoundaryKeys: ["five_hour"]))
+        #expect(!Formatting.detectCriticalReset(previousAnalyses: [], genuineBoundaryKeys: []))
     }
-
 }

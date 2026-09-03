@@ -50,8 +50,8 @@
   "error.rate_limited": "Snelheidsbeperking – te veel verzoeken",
   "error.unauthorized": "Sessie verlopen – werk cookie bij in Voorkeuren",
   "error.unexpected_status": "Onverwachte HTTP %1$ld",
+  "graph.credit.description": "gebruikskrediet: %1$ld%% → %2$ld%%",
   "graph.now": "nu",
-  "graph.placeholder": "Geen resetgegevens",
   "graph.stats.blocked": "geblokkeerd · reset om %1$@",
   "graph.stats.blocked_date": "geblokkeerd · reset %1$@",
   "graph.stats.collecting": "gegevens verzamelen…",
@@ -85,6 +85,16 @@
   "prefs.button.save": "Bewaar",
   "prefs.launch_at_login": "Open bij inloggen",
   "prefs.reset_sound": "Geluid afspelen wanneer kritieke limiet wordt gereset",
+  "prefs.retention.label": "Bewaar gebruiksgeschiedenis (jaren):",
+  "prefs.retention.confirm.title": "Gearchiveerde geschiedenis verwijderen?",
+  "prefs.retention.confirm.years_phrase": "%1$ld jaar",
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld gearchiveerd gebruiksvenster",
+    "other": "%1$ld gearchiveerde gebruiksvensters"
+  },
+  "prefs.retention.confirm.message": "Als u de bewaartermijn verkort tot %1$@, worden %2$@ permanent verwijderd. Dit kan niet ongedaan worden gemaakt.",
+  "prefs.retention.confirm.delete_button": "Verwijderen",
+  "prefs.retention.confirm.cancel_button": "Annuleren",
   "prefs.window.title": "Claude Monitor – Voorkeuren",
   "setup.button.skip": "Sla over",
   "setup.button.start": "Aan de slag",
@@ -96,5 +106,10 @@
   "status.operational": "Operationeel",
   "status.partial_outage": "Gedeeltelijke storing",
   "status.unknown": "Onbekend",
-  "window.scope.all": "alle"
+  "window.scope.all": "alle",
+  "menu.history.saveFailing": "Geschiedenis opslaan mislukt (sinds %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld in quarantaine geplaatst geschiedenisbestand",
+    "other": "%1$ld in quarantaine geplaatste geschiedenisbestanden"
+  }
 }

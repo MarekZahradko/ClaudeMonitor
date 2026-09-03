@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 
 extension DataCoordinator {
-    func refresh() async {
+    func refresh(now: Date = Date()) async {
         if Constants.Demo.isActive {
             return await refreshDemo()
         }
@@ -12,40 +12,50 @@ extension DataCoordinator {
             // Don't stamp lastFailedAt for offline ticks: the "Last update failed at HH:MM" row
             // would advance every tick despite no real attempt being made. Stale banner already
             // signals the problem at threshold.
-            let now = Date()
             commitPollState(now: now, schedulerInterval: scheduler.nextPollInterval(usage: currentUsage))
             onUpdate?()
             return
         }
-        let usageBeforeRefresh = currentUsage
+        let previousAnalyses = windowAnalyses
         async let statusResult: Void = refreshStatus()
-        async let usageResult: Void = refreshUsage()
-        _ = await (statusResult, usageResult)
+        async let usageOutcome: UsageFetchOutcome = refreshUsage()
+        _ = await statusResult
+        let outcome = await usageOutcome
         guard !Task.isCancelled else { return }
         if scheduler.statusState.consecutiveFailures == 0 && scheduler.usageState.consecutiveFailures == 0 {
             lastFailedAt = nil
         }
-        if let newUsage = currentUsage {
-            let now = Date()
-            await detectAndStoreResets(current: newUsage.entries, previous: usageBeforeRefresh?.entries ?? [], at: now)
+        // Only a FRESH, complete usage response may drive history recording, boundary
+        // detection, and missing-window archiving — never a stale `currentUsage` retained
+        // from a previous successful cycle (see `refreshUsage()`'s doc comment). The UI may
+        // still display stale data (via `monitorState`/`currentUsage`), but stale data must
+        // never be re-recorded as if it were a fresh, confirmed-unchanged observation.
+        if case .fresh(let newUsage) = outcome {
+            let genuineBoundaryKeys = await detectAndStoreResets(current: newUsage.entries, at: now)
             usageHistory.record(entries: newUsage.entries, at: now)
+            await usageHistory.archiveMissingWindows(
+                currentIdentities: Set(newUsage.entries.map { $0.storageIdentity }),
+                at: now
+            )
             await usageHistory.save()
             windowAnalyses = newUsage.entries.map { entry in
-                UsageHistory.analyze(entry: entry, samples: usageHistory.samples(for: entry), now: now)
+                UsageHistory.analyze(
+                    entry: entry,
+                    samples: usageHistory.samples(for: entry),
+                    events: usageHistory.storage[entry.storageIdentity]?.events ?? [],
+                    now: now
+                )
+            }
+            if Formatting.detectCriticalReset(previousAnalyses: previousAnalyses, genuineBoundaryKeys: genuineBoundaryKeys) {
+                onCriticalReset?()
             }
         }
         scheduler.adjustPollingRate(windowAnalyses: windowAnalyses, systemIdleTime: systemIdleProvider.idleTime())
-        let now = Date()
-        commitPollState(now: now, schedulerInterval: scheduler.nextPollInterval(usage: currentUsage))
+        commitPollState(now: Date(), schedulerInterval: scheduler.nextPollInterval(usage: currentUsage))
         onUpdate?()
-        if let prev = usageBeforeRefresh, let curr = currentUsage,
-           Formatting.detectCriticalReset(previous: prev, current: curr) {
-            onCriticalReset?()
-        }
     }
 
     func refreshDemo() async {
-        let previousUsage = currentUsage
         let scenario = Constants.Demo.rotationOrder[demoRotationIndex]
         demoRotationIndex = (demoRotationIndex + 1) % Constants.Demo.rotationOrder.count
         let frame = DemoData.scenario(scenario)
@@ -61,8 +71,7 @@ extension DataCoordinator {
         commitPollState(now: now, schedulerInterval: Constants.Demo.rotationInterval)
         currentPollInterval = frame.pollInterval
         onUpdate?()
-        if let prev = previousUsage, let curr = currentUsage,
-           Formatting.detectCriticalReset(previous: prev, current: curr) {
+        if frame.isCriticalReset {
             onCriticalReset?()
         }
     }
@@ -80,18 +89,55 @@ extension DataCoordinator {
         }
     }
 
-    func refreshUsage() async {
-        guard !Task.isCancelled else { return }
+    /// Whether a `refreshUsage()` cycle produced a response fresh enough to drive history
+    /// recording (`.fresh`), or is merely retaining a previously-fetched value for display
+    /// while this cycle's fetch didn't happen or failed (`.stale`). `currentUsage` alone can't
+    /// express this distinction — on any non-auth failure it's left holding the PREVIOUS
+    /// successful value, so `if let newUsage = currentUsage` cannot tell a failed cycle apart
+    /// from a fresh success. Callers of `refreshUsage()` must use this return value (not
+    /// `currentUsage`) to decide whether to feed a cycle into `UsageHistory.record`,
+    /// `archiveMissingWindows`, or boundary detection — recording a stale value would
+    /// fabricate a "confirmed unchanged at now" sample that never happened, destroying gap
+    /// detection and violating `archiveMissingWindows`' documented precondition.
+    enum UsageFetchOutcome: Sendable {
+        case fresh(UsageResponse)
+        case stale
+    }
+
+    func refreshUsage() async -> UsageFetchOutcome {
+        guard !Task.isCancelled else { return .stale }
         guard let credentials = loadedCredentials else {
             usageError = String(localized: "credentials.configure", bundle: .module)
-            return
+            return .stale
         }
+        // Captured BEFORE the fetch's suspension point. `UsageHistory.generation` is bumped by
+        // exactly the two operations that replace what `storage` represents — `switchOrganization`
+        // and `clearAll` — and both are synchronous and eager, so either can complete while this
+        // fetch is suspended.
+        //
+        // Without this guard the response of a fetch issued for organization A, arriving after the
+        // user switched to organization B, was treated as a fully fresh observation of B: it set
+        // `currentUsage`, then `refresh()` fed it through `record()`, `archiveMissingWindows()` and
+        // `save()`, writing A's utilization numbers into B's in-memory storage AND persisting them
+        // to B's directory on disk. That is silent, permanent cross-organization corruption of the
+        // user's history, and it violates the project's core invariant that a sample belongs to the
+        // instance it was recorded into. The same applies to `clearAll()`: an in-flight response
+        // landing afterwards would repopulate history the user had just explicitly erased.
+        //
+        // Discarding as `.stale` is deliberately total — no `currentUsage`, no scheduler success,
+        // no history write. There is nothing to salvage: the data is correct for an organization
+        // that is no longer selected. The org switch triggers its own poll, so the current
+        // organization's data arrives on that cycle.
+        let generationAtFetch = usageHistory.generation
         do {
-            currentUsage = try await usageService.fetch(organizationId: credentials.orgId, cookieString: credentials.cookie)
+            let response = try await usageService.fetch(organizationId: credentials.orgId, cookieString: credentials.cookie)
+            guard usageHistory.generation == generationAtFetch else { return .stale }
+            currentUsage = response
             usageError = nil
             scheduler.recordUsageSuccess()
+            return .fresh(response)
         } catch {
-            if Task.isCancelled { return }
+            if Task.isCancelled { return .stale }
             let category = RetryCategory(classifying: error)
             scheduler.recordUsageFailure(category: category)
             handleServiceFailure(error: error, consecutiveFailures: scheduler.usageState.consecutiveFailures, errorStorage: &usageError)
@@ -99,6 +145,7 @@ extension DataCoordinator {
                 currentUsage = nil
                 windowAnalyses = []
             }
+            return .stale
         }
     }
 
@@ -109,22 +156,26 @@ extension DataCoordinator {
         }
     }
 
-    @MainActor func detectAndStoreResets(current: [WindowEntry], previous: [WindowEntry], at now: Date) async {
-        let previousByKey = Dictionary(uniqueKeysWithValues: previous.map { ($0.key, $0) })
-        var anyReset = false
+    /// Runs `UsageHistory`'s boundary detection per entry and returns the keys of entries
+    /// that had a genuine new-window boundary this cycle — the single authoritative signal
+    /// consumed both for archive pruning and for `Formatting.detectCriticalReset` (Task 5:
+    /// critical-reset detection no longer re-derives a boundary from raw timestamps).
+    @discardableResult
+    @MainActor func detectAndStoreResets(current: [WindowEntry], at now: Date) async -> Set<String> {
+        var genuineBoundaryKeys: Set<String> = []
         for entry in current {
-            let previousEntry = previousByKey[entry.key]
             let didReset = await usageHistory.detectAndHandleReset(
                 entry: entry,
                 newResetsAt: entry.window.resetsAt,
-                previousResetsAt: previousEntry?.window.resetsAt
+                at: now
             )
             if didReset {
-                anyReset = true
+                genuineBoundaryKeys.insert(entry.key)
             }
         }
-        if anyReset {
-            await usageHistory.pruneArchives(currentEntries: current)
+        if !genuineBoundaryKeys.isEmpty {
+            await usageHistory.pruneArchives()
         }
+        return genuineBoundaryKeys
     }
 }

@@ -97,6 +97,14 @@ struct PollIntervalTests {
         #expect(!scheduler.isAnyServiceStale)
     }
 
+    @Test func isAnyServiceStaleJustBelowThreshold() {
+        var scheduler = PollingScheduler()
+        for _ in 0..<(Constants.Retry.failureThreshold - 1) {
+            scheduler.recordStatusFailure(category: .transient)
+        }
+        #expect(!scheduler.isAnyServiceStale)
+    }
+
     @Test func isAnyServiceStaleAtThreshold() {
         var scheduler = PollingScheduler()
         for _ in 0..<Constants.Retry.failureThreshold {
@@ -124,6 +132,24 @@ struct PollIntervalTests {
         var scheduler = PollingScheduler()
         scheduler.recordUsageSuccess()
         #expect(!scheduler.isUsageDataExpired)
+    }
+
+    @Test func isUsageDataExpiredReturnsTrueWellPastMaxAge() {
+        let staleUsageState = ServiceState(lastSuccess: Date().addingTimeInterval(-(Constants.Retry.staleDataMaxAge * 2)))
+        let scheduler = PollingScheduler(usageState: staleUsageState)
+        #expect(scheduler.isUsageDataExpired)
+    }
+
+    @Test func isUsageDataExpiredJustInsideMaxAgeIsFalse() {
+        let usageState = ServiceState(lastSuccess: Date().addingTimeInterval(-(Constants.Retry.staleDataMaxAge - 5)))
+        let scheduler = PollingScheduler(usageState: usageState)
+        #expect(!scheduler.isUsageDataExpired)
+    }
+
+    @Test func isUsageDataExpiredJustOutsideMaxAgeIsTrue() {
+        let usageState = ServiceState(lastSuccess: Date().addingTimeInterval(-(Constants.Retry.staleDataMaxAge + 5)))
+        let scheduler = PollingScheduler(usageState: usageState)
+        #expect(scheduler.isUsageDataExpired)
     }
 
 }

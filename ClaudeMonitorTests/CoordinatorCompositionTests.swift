@@ -52,7 +52,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = makeCoordinator(fixture: fixture, usage: mockUsage)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         // The coordinator's windowAnalyses must carry the same duration that came from the parser.
         let analyses = coordinator.monitorState.usage.windowAnalyses
@@ -108,16 +107,66 @@ import Foundation
         let (coordinator, _) = makeCoordinator(fixture: fixture, usage: sequencedUsage)
         coordinator.onCriticalReset = { criticalResetCount += 1 }
 
-        await coordinator.refresh() // Refresh 1: establishes critical baseline, no previous usage.
+        await coordinator.refresh(now: now) // Refresh 1: establishes critical baseline, no previous usage.
         #expect(criticalResetCount == 0, "No reset on first refresh — no previous usage to compare against.")
 
-        await coordinator.refresh() // Refresh 2: detects reset from critical state.
+        // Refresh 2 must run at a `now` past prevResetsAt for the resets_at jump to be a
+        // genuine boundary (not drift on a window that hasn't ended yet).
+        let refresh2Now = prevResetsAt.addingTimeInterval(10)
+        await coordinator.refresh(now: refresh2Now) // Refresh 2: detects reset from critical state.
         #expect(criticalResetCount == 1, "onCriticalReset must fire exactly once when reset is detected.")
 
-        await coordinator.refresh() // Refresh 3: second response served again; same resetsAt, no new reset.
+        await coordinator.refresh(now: refresh2Now.addingTimeInterval(1)) // Refresh 3: same resetsAt, no new reset.
         #expect(criticalResetCount == 1, "onCriticalReset must not fire again when no new reset occurred.")
 
-        await fixture.cleanup()
+    }
+
+    // MARK: - Test 2b: Task 5 regression — a 90s resets_at nudge must not fire a critical reset
+
+    /// The previous (defective) implementation used the 60s `resetBoundaryTolerance` to
+    /// decide whether a critical reset fired, so a 90s server-side nudge (comfortably inside
+    /// the old duration-derived 9000s band, but just above the 60s tolerance) spuriously
+    /// fired the user-visible critical-reset sound/animation. This band had zero coverage
+    /// before this fix — that is why the regression escaped review.
+    @Test func ninetySecondResetsAtNudgeDoesNotFireCriticalReset() async {
+        let duration: TimeInterval = 18000
+        let now = Date()
+
+        // Critical baseline: 65% used, 50% remaining → projected ≈ 130%.
+        let prevResetsAt = now.addingTimeInterval(9000)
+        let firstResponse = UsageResponse(entries: [
+            WindowEntry(key: "five_hour", duration: duration, durationLabel: "5h", modelScope: nil,
+                        window: UsageWindow(utilization: 65, resetsAt: prevResetsAt))
+        ])
+        // A 90s forward nudge — not a genuine boundary: the old window (prevResetsAt) has
+        // not actually arrived yet at the time of this poll.
+        let nudgedResetsAt = prevResetsAt.addingTimeInterval(90)
+        let secondResponse = UsageResponse(entries: [
+            WindowEntry(key: "five_hour", duration: duration, durationLabel: "5h", modelScope: nil,
+                        window: UsageWindow(utilization: 66, resetsAt: nudgedResetsAt))
+        ])
+
+        final class SequencedMockUsage: UsageFetching, @unchecked Sendable {
+            private var responses: [UsageResponse]
+            private var index = 0
+            init(responses: [UsageResponse]) { self.responses = responses }
+            func fetch(organizationId: String, cookieString: String) async throws -> UsageResponse {
+                let r = responses[min(index, responses.count - 1)]
+                index += 1
+                return r
+            }
+        }
+
+        let sequencedUsage = SequencedMockUsage(responses: [firstResponse, secondResponse])
+        var criticalResetCount = 0
+        let fixture = UsageHistoryTestFixture()
+        let (coordinator, _) = makeCoordinator(fixture: fixture, usage: sequencedUsage)
+        coordinator.onCriticalReset = { criticalResetCount += 1 }
+
+        await coordinator.refresh(now: now)
+        await coordinator.refresh(now: now.addingTimeInterval(60)) // well before prevResetsAt
+
+        #expect(criticalResetCount == 0, "A 90s resets_at nudge that isn't a genuine boundary must never fire the critical reset.")
     }
 
     // MARK: - Test 3: Style equivalence between analyze() and inline usageStyle()
@@ -193,12 +242,13 @@ import Foundation
         #expect(!history.samples(for: fiveHourEntry).isEmpty)
         #expect(!history.samples(for: sevenDayEntry).isEmpty)
 
-        // Simulate a reset for five_hour only — advance its resetsAt by more than duration/2.
+        // Simulate a reset for five_hour only — advance its resetsAt by more than duration/2,
+        // and pass `at:` past fiveHourResetsAt so this is a genuine boundary, not drift.
         let newFiveHourResetsAt = fiveHourResetsAt.addingTimeInterval(18000)
         await history.detectAndHandleReset(
             entry: fiveHourEntry,
             newResetsAt: newFiveHourResetsAt,
-            previousResetsAt: fiveHourResetsAt
+            at: fiveHourResetsAt.addingTimeInterval(10)
         )
 
         // five_hour samples are cleared by archiveWindow() (called inside detectAndHandleReset).
@@ -209,7 +259,6 @@ import Foundation
         #expect(!history.samples(for: sevenDayEntry).isEmpty,
                 "seven_day samples must not be affected by the five_hour reset")
 
-        await fixture.cleanup()
     }
 
     // MARK: - Test 5: reloadCredentials org switch clears state
@@ -258,6 +307,5 @@ import Foundation
         #expect(coordinator.monitorState.usage.windowAnalyses.isEmpty,
                 "windowAnalyses must be cleared after switching to a different org ID")
 
-        await fixture.cleanup()
     }
 }

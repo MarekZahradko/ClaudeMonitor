@@ -50,8 +50,8 @@
   "error.rate_limited": "Hastighetsbegränsad – för många förfrågningar",
   "error.unauthorized": "Sessionen har gått ut – uppdatera cookie i Inställningar",
   "error.unexpected_status": "Oväntat HTTP %1$ld",
+  "graph.credit.description": "användningskredit: %1$ld%% → %2$ld%%",
   "graph.now": "nu",
-  "graph.placeholder": "Ingen återställningsdata",
   "graph.stats.blocked": "blockerad · återställs kl. %1$@",
   "graph.stats.blocked_date": "blockerad · återställs %1$@",
   "graph.stats.collecting": "samlar data…",
@@ -85,6 +85,16 @@
   "prefs.button.save": "Spara",
   "prefs.launch_at_login": "Starta vid inloggning",
   "prefs.reset_sound": "Spela ljud när kritisk gräns återställs",
+  "prefs.retention.label": "Behåll användningshistorik (år):",
+  "prefs.retention.confirm.title": "Radera arkiverad historik?",
+  "prefs.retention.confirm.years_phrase": "%1$ld år",
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld arkiverat användningsfönster",
+    "other": "%1$ld arkiverade användningsfönster"
+  },
+  "prefs.retention.confirm.message": "Om du minskar lagringstiden till %1$@ raderas %2$@ permanent. Detta kan inte ångras.",
+  "prefs.retention.confirm.delete_button": "Radera",
+  "prefs.retention.confirm.cancel_button": "Avbryt",
   "prefs.window.title": "Claude Monitor – Inställningar",
   "setup.button.skip": "Hoppa över",
   "setup.button.start": "Kom igång",
@@ -96,5 +106,10 @@
   "status.operational": "I drift",
   "status.partial_outage": "Partiellt avbrott",
   "status.unknown": "Okänd",
-  "window.scope.all": "alla"
+  "window.scope.all": "alla",
+  "menu.history.saveFailing": "Sparande av historik misslyckas (sedan %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld karantänsatt historikfil",
+    "other": "%1$ld karantänsatta historikfiler"
+  }
 }

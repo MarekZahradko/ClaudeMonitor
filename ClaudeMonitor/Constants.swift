@@ -95,6 +95,7 @@ enum Constants {
 
     enum Preferences {
         static let resetSoundEnabled = "resetSoundEnabled"
+        static let historyRetentionYears = "historyRetentionYears"
     }
 
     enum Sounds {
@@ -116,9 +117,79 @@ enum Constants {
     enum History {
         static let deduplicationInterval: TimeInterval = 30
         static let gapThreshold: TimeInterval = 300
-        static let archiveRetentionMultiplier = 11
-        static let resetWindowFraction: Double = 0.5
+        // Jitter allowance around a stored resets_at: moves within this tolerance
+        // (either direction) are treated as the same window instance, not a boundary.
+        static let resetBoundaryTolerance: TimeInterval = 60
         static let inferredSegmentMinGap: TimeInterval = 60
+        // Single source of truth for where production window-history data lives,
+        // relative to the Application Support directory.
+        static let productionSubdirectory = "ClaudeMonitor/usage"
+        // Single source of truth for the current on-disk window-instance file extension,
+        // used for both live instances and archives (see WindowInstanceCodec). Named after
+        // the file kind, not a format version: the codec has already moved from v2 to v3
+        // (and may move again) while files keep this same ".dat" extension throughout, so a
+        // version-numbered name here would go stale the next time the on-disk format bumps
+        // (this is exactly what happened to the previous name, `v2FileExtension`, once the
+        // encoder moved on to v3 — see WindowInstanceCodec.swift).
+        static let windowInstanceFileExtension = "dat"
+        // Legacy (v1) archive suffix — LZMA-compressed bare JSON array, superseded by the v3
+        // binary format (`windowInstanceFileExtension`). Still recognized by readers/collectors
+        // (retention's `collectArchiveFiles`, the one-time legacy-archive migration) so old
+        // archives remain visible to both; never written by any current code path.
+        static let legacyArchiveSuffix = ".json.lzma"
+        // Per-organization metadata file (currently: persisted missingWindowSince), stored
+        // alongside live/ and archive/ — see UsageHistory+Manifest.swift.
+        static let manifestFilename = "manifest.json"
+        // Current manifest schema version. v1 predates `missingWindowSince`; v2 adds it.
+        static let manifestVersion = 2
+
+        // MARK: - Retention
+
+        static let defaultRetentionYears = 2
+        static let minRetentionYears = 1
+        static let maxRetentionYears = 99
+        // How often pruneArchives() re-runs on its own periodic schedule (in addition to
+        // running once at launch and once after any detected window boundary). Retention is
+        // measured in years, so daily granularity is ample — running more often buys nothing.
+        static let pruneInterval: TimeInterval = Constants.Time.secondsPerDay
+
+        /// Reads the configured retention (in years) from `UserDefaults`, defensively
+        /// resolving a missing, zero, negative, or out-of-range stored value to
+        /// `defaultRetentionYears`. A corrupt or absent setting must never resolve to a
+        /// value that deletes more history than the user ever configured.
+        static func retentionYears(defaults: UserDefaults = .standard) -> Int {
+            let stored = defaults.integer(forKey: Constants.Preferences.historyRetentionYears)
+            guard (minRetentionYears...maxRetentionYears).contains(stored) else { return defaultRetentionYears }
+            return stored
+        }
+
+        /// Clamps a user-entered retention value (Preferences stepper/text field) into the
+        /// valid `[minRetentionYears, maxRetentionYears]` range.
+        static func clampRetentionYears(_ value: Int) -> Int {
+            min(max(value, minRetentionYears), maxRetentionYears)
+        }
+
+        // MARK: - Missing-window archiving (Task 5)
+
+        /// A window key present in `storage` but absent from the API is archived once it has
+        /// been continuously absent (across successful, complete usage fetches only) for at
+        /// least its own window duration. Rationale: if the window were still valid, a full
+        /// duration cycle would have elapsed and it would have reset and reappeared under a
+        /// new `resets_at` — so surviving a full duration absent, polled repeatedly, rules out
+        /// a single missed/failed refresh or transient key reshuffle and leaves "the API
+        /// stopped reporting this window" as the only explanation.
+        static let missingWindowArchiveMultiplier: Double = 1.0
+
+        // MARK: - Quarantine
+
+        /// Extension prefix used by the current quarantine naming scheme (see
+        /// `UsageHistory.quarantine`): `<original>.corrupt_<timestamp>` or, on a same-instant
+        /// collision, `<original>.corrupt_<timestamp>-2`, `-3`, ...
+        static let quarantinePrefix = "corrupt_"
+        /// The fixed-width (16-character, e.g. "2026-08-17T1200Z") `yyyy-MM-dd'T'HHmm'Z'`
+        /// timestamp length used by the quarantine naming scheme — the same format archives
+        /// already use for their `<start>_<end>` filenames.
+        static let quarantineTimestampLength = 16
     }
 
     enum Projection {
@@ -129,5 +200,15 @@ enum Constants {
         static let fallbackBoldThreshold: Int = 80
         static let fallbackWarningThreshold: Int = 90
         static let fallbackCriticalThreshold: Int = 95
+
+        /// Floor applied to the elapsed-time denominator when computing the post-credit implied
+        /// rate (`UsageHistory.computeRate`). Immediately after a credit, `now - creditAt` can be
+        /// only seconds — dividing by that would produce an absurdly large instantaneous rate
+        /// from a single data point. Flooring the denominator at this value (rather than
+        /// rejecting the rate outright) bounds the maximum possible spike while still producing
+        /// a usable projection right away. Matches the order of magnitude of
+        /// `Constants.History.deduplicationInterval` — within one dedup interval of the credit,
+        /// there isn't yet a second independent observation to trust a raw instantaneous rate.
+        static let minRateElapsedAfterCredit: TimeInterval = 60
     }
 }

@@ -115,7 +115,7 @@ final class MenuBarController: NSObject, MenuActions {
 
     @objc func didSelectPreferences() {
         openWindow(&preferencesController) {
-            PreferencesWindowController { [weak self] in self?.coordinator.restartPolling() }
+            PreferencesWindowController(usageHistory: coordinator.usageHistory) { [weak self] in self?.coordinator.restartPolling() }
         }
     }
 
@@ -132,8 +132,16 @@ extension MenuBarController: NSMenuDelegate {
         updateCountdownState()
     }
 
+    func menu(_ menu: NSMenu, willHighlight item: NSMenuItem?) {
+        MenuBuilder.syncHighlight(in: menu, highlighted: item)
+    }
+
     func menuDidClose(_ menu: NSMenu) {
         isMenuOpen = false
+        // Not merely defensive: closing the menu after clicking a row is a path where AppKit
+        // never reports the highlight going away, so the row would stay lit until it is hovered
+        // and left again — the views outlive the menu session.
+        MenuBuilder.syncHighlight(in: menu, highlighted: nil)
         updateCountdownState()
     }
 }

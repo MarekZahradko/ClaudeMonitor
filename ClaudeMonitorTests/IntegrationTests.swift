@@ -5,6 +5,10 @@ import CFNetwork
 
 /// Integration tests that hit real APIs. These verify network connectivity,
 /// DNS resolution, TLS, and response parsing against live endpoints.
+///
+/// Skipped by default so `./test.sh` never depends on network reachability. To run them:
+/// `CLAUDEMONITOR_RUN_INTEGRATION_TESTS=1 ./test.sh`
+@Suite(.enabled(if: ProcessInfo.processInfo.environment[BuildInfo.runIntegrationTestsEnvVar] != nil))
 struct IntegrationTests {
 
     // MARK: - Status API

@@ -7,13 +7,7 @@ struct UsageHistoryTestFixture {
     let baseDirectory: URL
 
     @MainActor init() {
-        self.baseDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("ClaudeMonitorTests-\(UUID().uuidString)", isDirectory: true)
+        self.baseDirectory = TestHistoryRoot.makeSubdirectory()
         self.history = UsageHistory(baseDirectory: baseDirectory)
-    }
-
-    func cleanup() async {
-        await history.clearAll()
-        try? FileManager.default.removeItem(at: baseDirectory)
     }
 }

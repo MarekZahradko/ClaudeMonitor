@@ -48,6 +48,55 @@ import Testing
         #expect(style.isBold)
     }
 
+    @Test func criticalWhenUtilizationAboveBlockedThreshold() {
+        let now = Date()
+        let style = computeStyle(projected: 50, utilization: 110, timeRemaining: 3600, resetsAt: now.addingTimeInterval(3600))
+        #expect(style.level == .critical)
+        #expect(style.isBold)
+    }
+
+    @Test func boldAtExactBoldThreshold() {
+        let now = Date()
+        let style = computeStyle(projected: 80, utilization: 40, timeRemaining: 3600, resetsAt: now.addingTimeInterval(3600))
+        #expect(style.level == .normal)
+        #expect(style.isBold)
+    }
+
+    @Test func notBoldJustBelowBoldThreshold() {
+        let now = Date()
+        let style = computeStyle(projected: 79.9, utilization: 40, timeRemaining: 3600, resetsAt: now.addingTimeInterval(3600))
+        #expect(style.level == .normal)
+        #expect(!style.isBold)
+    }
+
+    @Test func warningAtExactWarningThreshold() {
+        let now = Date()
+        let style = computeStyle(projected: 100, utilization: 50, timeRemaining: 3600, resetsAt: now.addingTimeInterval(3600))
+        #expect(style.level == .warning)
+        #expect(style.isBold)
+    }
+
+    @Test func boldNotWarningJustBelowWarningThreshold() {
+        let now = Date()
+        let style = computeStyle(projected: 99.9, utilization: 50, timeRemaining: 3600, resetsAt: now.addingTimeInterval(3600))
+        #expect(style.level == .normal)
+        #expect(style.isBold)
+    }
+
+    @Test func criticalAtExactCriticalThreshold() {
+        let now = Date()
+        let style = computeStyle(projected: 120, utilization: 60, timeRemaining: 3600, resetsAt: now.addingTimeInterval(3600))
+        #expect(style.level == .critical)
+        #expect(style.isBold)
+    }
+
+    @Test func warningNotCriticalJustBelowCriticalThreshold() {
+        let now = Date()
+        let style = computeStyle(projected: 119.9, utilization: 60, timeRemaining: 3600, resetsAt: now.addingTimeInterval(3600))
+        #expect(style.level == .warning)
+        #expect(style.isBold)
+    }
+
     @Test func normalWhenTimeRemainingZero() {
         let now = Date()
         let style = computeStyle(projected: 150, utilization: 70, timeRemaining: 0, resetsAt: now.addingTimeInterval(0))

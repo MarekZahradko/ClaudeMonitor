@@ -50,8 +50,8 @@
   "error.rate_limited": "Υπέρβαση ορίου αιτημάτων",
   "error.unauthorized": "Η συνεδρία έληξε – ενημερώστε το cookie στις Προτιμήσεις",
   "error.unexpected_status": "Μη αναμενόμενη HTTP απόκριση %1$ld",
+  "graph.credit.description": "πίστωση χρήσης: %1$ld%% → %2$ld%%",
   "graph.now": "τώρα",
-  "graph.placeholder": "Δεν υπάρχουν δεδομένα επαναφοράς",
   "graph.stats.blocked": "αποκλεισμένο · επαναφορά στις %1$@",
   "graph.stats.blocked_date": "αποκλεισμένο · επαναφορά %1$@",
   "graph.stats.collecting": "συλλογή δεδομένων…",
@@ -85,6 +85,19 @@
   "prefs.button.save": "Αποθήκευση",
   "prefs.launch_at_login": "Εκκίνηση κατά τη σύνδεση",
   "prefs.reset_sound": "Αναπαραγωγή ήχου κατά την επαναφορά κρίσιμου ορίου",
+  "prefs.retention.label": "Διατήρηση ιστορικού χρήσης (έτη):",
+  "prefs.retention.confirm.title": "Διαγραφή αρχειοθετημένου ιστορικού;",
+  "prefs.retention.confirm.years_phrase": {
+    "one": "%1$ld έτος",
+    "other": "%1$ld έτη"
+  },
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld αρχειοθετημένο παράθυρο χρήσης",
+    "other": "%1$ld αρχειοθετημένα παράθυρα χρήσης"
+  },
+  "prefs.retention.confirm.message": "Η μείωση της διατήρησης σε %1$@ θα διαγράψει οριστικά %2$@. Αυτό δεν μπορεί να αναιρεθεί.",
+  "prefs.retention.confirm.delete_button": "Διαγραφή",
+  "prefs.retention.confirm.cancel_button": "Ακύρωση",
   "prefs.window.title": "Claude Monitor – Προτιμήσεις",
   "setup.button.skip": "Παράλειψη",
   "setup.button.start": "Ξεκινήστε",
@@ -96,5 +109,10 @@
   "status.operational": "Λειτουργικό",
   "status.partial_outage": "Μερική διακοπή",
   "status.unknown": "Άγνωστο",
-  "window.scope.all": "όλα"
+  "window.scope.all": "όλα",
+  "menu.history.saveFailing": "Η αποθήκευση ιστορικού αποτυγχάνει (από %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld αρχείο ιστορικού σε καραντίνα",
+    "other": "%1$ld αρχεία ιστορικού σε καραντίνα"
+  }
 }

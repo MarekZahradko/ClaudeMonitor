@@ -141,24 +141,16 @@ extension Formatting {
             .max()
     }
 
-    static func detectCriticalReset(previous: UsageResponse, current: UsageResponse, now: Date = Date()) -> Bool {
-        let previousByKey = Dictionary(uniqueKeysWithValues: previous.entries.map { ($0.key, $0) })
-        for currEntry in current.entries {
-            guard let prevEntry = previousByKey[currEntry.key] else { continue }
-            let prev = prevEntry.window
-            let curr = currEntry.window
-            guard let prevReset = prev.resetsAt, let currReset = curr.resetsAt else { continue }
-            guard currReset.timeIntervalSince(prevReset) > currEntry.duration * Constants.History.resetWindowFraction else { continue }
-            if usageStyle(
-                utilization: prev.utilization,
-                resetsAt: prev.resetsAt,
-                windowDuration: currEntry.duration,
-                now: now
-            ).isCritical {
-                return true
-            }
-        }
-        return false
+    /// Whether a critical reset just occurred, for the user-visible sound/animation.
+    ///
+    /// This intentionally does NOT re-derive a boundary from raw `resets_at` timestamps —
+    /// `UsageHistory.detectAndHandleReset` is the single source of truth for whether a
+    /// genuine window boundary occurred (see its doc comment). This function only answers
+    /// the remaining question: was the window critical right before that boundary? It looks
+    /// up each previously-computed `WindowAnalysis.style` (itself EMA/projection-based, not
+    /// a raw timestamp comparison) for the entries whose keys had a genuine boundary.
+    static func detectCriticalReset(previousAnalyses: [WindowAnalysis], genuineBoundaryKeys: Set<String>) -> Bool {
+        previousAnalyses.contains { genuineBoundaryKeys.contains($0.entry.key) && $0.style.isCritical }
     }
 
 }

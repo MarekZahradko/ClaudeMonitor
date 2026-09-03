@@ -288,4 +288,67 @@ private final class MockMenuActions: NSObject, MenuActions {
         #expect(rowText(usageItem).contains("75%"))
         #expect(!rowText(usageItem).contains("50%"))
     }
+
+    // MARK: - Row highlighting
+
+    private func highlightMenu() -> NSMenu {
+        let now = Date()
+        let usage = UsageResponse(entries: [
+            .make(key: "five_hour", utilization: 42, resetsAt: now.addingTimeInterval(3600))!,
+            .make(key: "seven_day", utilization: 18, resetsAt: now.addingTimeInterval(86400))!,
+        ])
+        return MenuBuilder.build(state: MonitorState(usage: UsageSnapshot(currentUsage: usage), hasCredentials: true),
+                                 target: target)
+    }
+
+    private func usageRows(in menu: NSMenu) -> [UsageRowView] {
+        menu.items.compactMap { $0.view as? UsageRowView }
+    }
+
+    @Test func syncHighlightLightsExactlyOneRow() {
+        let menu = highlightMenu()
+        let rows = usageRows(in: menu)
+        #expect(rows.count >= 2)
+
+        let secondItem = menu.item(withTag: MenuBuilder.usageBaseTag + 1)
+        MenuBuilder.syncHighlight(in: menu, highlighted: secondItem)
+        #expect(secondItem?.view as? UsageRowView === rows[1])
+        let afterSecond = rows.map(\.isHighlighted)
+        #expect(afterSecond == [false, true])
+
+        // Moving the highlight must clear the row that had it — the stuck-highlight bug.
+        let firstItem = menu.item(withTag: MenuBuilder.usageBaseTag)
+        MenuBuilder.syncHighlight(in: menu, highlighted: firstItem)
+        let afterFirst = rows.map(\.isHighlighted)
+        #expect(afterFirst == [true, false])
+    }
+
+    @Test func syncHighlightWithNilClearsEveryRow() {
+        let menu = highlightMenu()
+        let rows = usageRows(in: menu)
+        MenuBuilder.syncHighlight(in: menu, highlighted: menu.item(withTag: MenuBuilder.usageBaseTag))
+        let lit = rows.map(\.isHighlighted)
+        #expect(lit == [true, false])
+
+        // What menuDidClose does: a closed menu has no highlighted row, so the highlight
+        // cannot survive into the next time the menu opens.
+        MenuBuilder.syncHighlight(in: menu, highlighted: nil)
+        let cleared = rows.map(\.isHighlighted)
+        #expect(cleared == [false, false])
+    }
+
+    @Test func syncHighlightIgnoresItemFromAnotherMenu() {
+        let menu = highlightMenu()
+        let rows = usageRows(in: menu)
+        MenuBuilder.syncHighlight(in: menu, highlighted: NSMenuItem())
+        let states = rows.map(\.isHighlighted)
+        #expect(states == [false, false])
+    }
+
+    // MARK: - History health
+
+    @Test func noHistoryHealthItemWhenNothingToReport() {
+        let state = MonitorState(history: HistoryHealth())
+        #expect(MenuBuilder.historyHealthItem(state: state) == nil)
+    }
 }

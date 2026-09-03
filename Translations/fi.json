@@ -50,14 +50,14 @@
   "error.rate_limited": "Pyyntöraja ylitetty – liian monta pyyntöä",
   "error.unauthorized": "Istunto vanhentunut – päivitä eväste Asetuksissa",
   "error.unexpected_status": "Odottamaton HTTP %1$ld",
+  "graph.credit.description": "käyttöhyvitys: %1$ld%% → %2$ld%%",
   "graph.now": "nyt",
-  "graph.placeholder": "Ei nollautumisdataa",
-  "graph.stats.blocked": "estetty · nollautuu %1$@",
+  "graph.stats.blocked": "estetty · nollautuu klo %1$@",
   "graph.stats.blocked_date": "estetty · nollautuu %1$@",
   "graph.stats.collecting": "kerätään dataa…",
   "graph.stats.idle": "ei käyttöä · %1$ld%% varaa",
   "graph.stats.limit_soon": "%1$@ · raja ~%2$@ ennen nollautumista",
-  "graph.stats.limit_soon_timed": "%1$@ · raja ~%2$@ ennen nollautumista (%3$@)",
+  "graph.stats.limit_soon_timed": "%1$@ · raja ~%2$@ ennen nollautumista (klo %3$@)",
   "graph.stats.limit_soon_timed_date": "%1$@ · raja ~%2$@ ennen nollautumista (%3$@)",
   "graph.stats.limit_unknown": "%1$@ · raja pian",
   "graph.stats.projected": "%1$@ · ~%2$ld%% nollautumisessa",
@@ -85,6 +85,19 @@
   "prefs.button.save": "Tallenna",
   "prefs.launch_at_login": "Avaa kirjautumisen yhteydessä",
   "prefs.reset_sound": "Toista ääni kun kriittinen raja nollautuu",
+  "prefs.retention.label": "Säilytä käyttöhistoriaa (vuotta):",
+  "prefs.retention.confirm.title": "Poistetaanko arkistoitu historia?",
+  "prefs.retention.confirm.years_phrase": {
+    "one": "%1$ld vuosi",
+    "other": "%1$ld vuotta"
+  },
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld arkistoitu käyttöikkuna",
+    "other": "%1$ld arkistoitua käyttöikkunaa"
+  },
+  "prefs.retention.confirm.message": "Säilytysajan uusi arvo on %1$@. Tämä poistaa pysyvästi %2$@. Tätä ei voi kumota.",
+  "prefs.retention.confirm.delete_button": "Poista",
+  "prefs.retention.confirm.cancel_button": "Peruuta",
   "prefs.window.title": "Claude Monitor – Asetukset",
   "setup.button.skip": "Ohita",
   "setup.button.start": "Aloita",
@@ -96,5 +109,10 @@
   "status.operational": "Toiminnassa",
   "status.partial_outage": "Osittainen katkos",
   "status.unknown": "Tuntematon",
-  "window.scope.all": "kaikki"
+  "window.scope.all": "kaikki",
+  "menu.history.saveFailing": "Historian tallennus epäonnistuu (alkaen %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld karanteeniin asetettu historiatiedosto",
+    "other": "%1$ld karanteeniin asetettua historiatiedostoa"
+  }
 }

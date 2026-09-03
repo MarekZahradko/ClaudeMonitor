@@ -83,13 +83,13 @@ extension MenuBuilder {
 
     static func updatedNextTitle(lastRefreshed: Date, interval: TimeInterval?) -> String {
         let updated = String(format: String(localized: "menu.updated", bundle: .module),
-                             lastRefreshed.formatted(.dateTime.hour().minute().second()))
+                             Formatting.absoluteTime(lastRefreshed, .hourMinuteSecond))
         guard let interval else { return updated }
         let intervalLabel = String(format: String(localized: "menu.interval", bundle: .module),
                                    Formatting.timeUntil(interval))
         let nextDate = lastRefreshed.addingTimeInterval(interval)
         let nextLabel = String(format: String(localized: "menu.next", bundle: .module),
-                               nextDate.formatted(.dateTime.hour().minute().second()))
+                               Formatting.absoluteTime(nextDate, .hourMinuteSecond))
         return "\(updated)        \(intervalLabel)        \(nextLabel)"
     }
 }

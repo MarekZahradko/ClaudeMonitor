@@ -50,8 +50,8 @@
   "error.rate_limited": "Ratenbegrenzung – zu viele Anfragen",
   "error.unauthorized": "Sitzung abgelaufen – Cookie in Einstellungen aktualisieren",
   "error.unexpected_status": "Unerwarteter HTTP-Status %1$ld",
+  "graph.credit.description": "Nutzungsgutschrift: %1$ld%% → %2$ld%%",
   "graph.now": "jetzt",
-  "graph.placeholder": "Keine Zurücksetzungsdaten",
   "graph.stats.blocked": "blockiert · wird zurückgesetzt um %1$@",
   "graph.stats.blocked_date": "blockiert · wird zurückgesetzt %1$@",
   "graph.stats.collecting": "Daten werden erfasst…",
@@ -85,6 +85,19 @@
   "prefs.button.save": "Sichern",
   "prefs.launch_at_login": "Beim Anmelden starten",
   "prefs.reset_sound": "Ton abspielen bei Zurücksetzen des kritischen Limits",
+  "prefs.retention.label": "Nutzungsverlauf aufbewahren (Jahre):",
+  "prefs.retention.confirm.title": "Archivierten Verlauf löschen?",
+  "prefs.retention.confirm.years_phrase": {
+    "one": "%1$ld Jahr",
+    "other": "%1$ld Jahre"
+  },
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld archiviertes Nutzungsfenster",
+    "other": "%1$ld archivierte Nutzungsfenster"
+  },
+  "prefs.retention.confirm.message": "Wenn Sie die Aufbewahrungsdauer auf %1$@ verkürzen, werden %2$@ dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
+  "prefs.retention.confirm.delete_button": "Löschen",
+  "prefs.retention.confirm.cancel_button": "Abbrechen",
   "prefs.window.title": "Claude Monitor – Einstellungen",
   "setup.button.skip": "Überspringen",
   "setup.button.start": "Erste Schritte",
@@ -96,5 +109,10 @@
   "status.operational": "Betriebsbereit",
   "status.partial_outage": "Teilweiser Ausfall",
   "status.unknown": "Unbekannt",
-  "window.scope.all": "alle"
+  "window.scope.all": "alle",
+  "menu.history.saveFailing": "Speichern des Verlaufs schlägt fehl (seit %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld unter Quarantäne gestellte Verlaufsdatei",
+    "other": "%1$ld unter Quarantäne gestellte Verlaufsdateien"
+  }
 }

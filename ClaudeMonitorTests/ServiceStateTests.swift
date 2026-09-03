@@ -55,14 +55,32 @@ struct ServiceStateTests {
         #expect(state.consecutiveFailures == 1)
     }
 
-    @Test func backoffExactProgression() {
+    @Test func backoffDoublesUntilCapThenStaysCapped() {
         var state = ServiceState()
-        // initial=10, doubles on transient: 20, 40, 80, 160, 300(capped), 300
-        let expected: [TimeInterval] = [20, 40, 80, 160, 300, 300]
-        for expectedBackoff in expected {
+        state.recordFailure(category: .transient)
+        #expect(state.currentBackoff == Constants.Retry.initialBackoff * 2,
+                "the first failure must exactly double the initial backoff")
+
+        var observed: [TimeInterval] = [state.currentBackoff]
+        for _ in 0..<10 {
             state.recordFailure(category: .transient)
-            #expect(state.currentBackoff == expectedBackoff,
-                    "After \(state.consecutiveFailures) failures, expected \(expectedBackoff) got \(state.currentBackoff)")
+            observed.append(state.currentBackoff)
+        }
+
+        for value in observed {
+            #expect(value <= Constants.Retry.maxBackoff, "backoff must never exceed the configured maximum")
+        }
+
+        for i in 1..<observed.count {
+            let previous = observed[i - 1]
+            let current = observed[i]
+            if previous < Constants.Retry.maxBackoff {
+                #expect(current == previous * 2 || current == Constants.Retry.maxBackoff,
+                        "each step must either exactly double the previous value or clamp at the maximum")
+            } else {
+                #expect(current == Constants.Retry.maxBackoff,
+                        "once capped, backoff must stay capped on further failures")
+            }
         }
     }
 

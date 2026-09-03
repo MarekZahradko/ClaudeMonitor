@@ -2,6 +2,7 @@
 set -uo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${PROJECT_DIR}/scripts/build-config.sh"
 APP_NAME="ClaudeMonitor"
 PRODUCT="ClaudeMonitorTestRunner"
 
@@ -23,7 +24,9 @@ BIN="$(swift build --product "${PRODUCT}" --show-bin-path)/${PRODUCT}"
 LOG="$(mktemp)"
 trap 'rm -f "${LOG}"' EXIT
 
-"${BIN}" 2>&1 | tee "${LOG}"
+# UNDER_TEST_ENV_VAR (from build-config.sh) is propagated into BuildInfo.swift by
+# generate-build-info.sh; UsageHistory.init checks it to guard against production writes.
+env "${UNDER_TEST_ENV_VAR}=1" "${BIN}" 2>&1 | tee "${LOG}"
 STATUS="${PIPESTATUS[0]}"
 
 if [ "${STATUS}" -ne 0 ]; then

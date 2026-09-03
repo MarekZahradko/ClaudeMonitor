@@ -50,8 +50,8 @@
   "error.rate_limited": "Límite de solicitudes superado",
   "error.unauthorized": "Sesión expirada – actualiza la cookie en Preferencias",
   "error.unexpected_status": "HTTP %1$ld inesperado",
+  "graph.credit.description": "crédito de uso: %1$ld%% → %2$ld%%",
   "graph.now": "ahora",
-  "graph.placeholder": "Sin datos de reinicio",
   "graph.stats.blocked": "bloqueado · se restablece a las %1$@",
   "graph.stats.blocked_date": "bloqueado · se restablece %1$@",
   "graph.stats.collecting": "recopilando datos…",
@@ -85,6 +85,19 @@
   "prefs.button.save": "Guardar",
   "prefs.launch_at_login": "Abrir al iniciar sesión",
   "prefs.reset_sound": "Reproducir sonido cuando se restablezca el límite crítico",
+  "prefs.retention.label": "Conservar historial de uso (años):",
+  "prefs.retention.confirm.title": "¿Eliminar historial archivado?",
+  "prefs.retention.confirm.years_phrase": {
+    "one": "%1$ld año",
+    "other": "%1$ld años"
+  },
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld ventana de uso archivada",
+    "other": "%1$ld ventanas de uso archivadas"
+  },
+  "prefs.retention.confirm.message": "Reducir la retención a %1$@ eliminará permanentemente %2$@. Esta acción no se puede deshacer.",
+  "prefs.retention.confirm.delete_button": "Eliminar",
+  "prefs.retention.confirm.cancel_button": "Cancelar",
   "prefs.window.title": "Claude Monitor – Preferencias",
   "setup.button.skip": "Omitir",
   "setup.button.start": "Empezar",
@@ -96,5 +109,10 @@
   "status.operational": "Operativo",
   "status.partial_outage": "Interrupción parcial",
   "status.unknown": "Desconocido",
-  "window.scope.all": "todos"
+  "window.scope.all": "todos",
+  "menu.history.saveFailing": "El guardado del historial está fallando (desde %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld archivo de historial en cuarentena",
+    "other": "%1$ld archivos de historial en cuarentena"
+  }
 }

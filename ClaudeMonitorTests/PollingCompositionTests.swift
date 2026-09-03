@@ -65,7 +65,46 @@ import Foundation
         #expect(scheduler.effectivePollingInterval > Constants.Polling.baseInterval,
                 "cooldown interval must exceed baseInterval=60s")
 
-        await fixture.cleanup()
+    }
+
+    // MARK: - Test 1b: Cooldown mid-ramp via UsageHistory.record()/samples() is strictly between bounds
+
+    /// Same rationale as CompositionTests.testSchedulerCooldownMidRampIsStrictlyBetweenBounds,
+    /// but exercises record()/samples(for:) as the data source (the path the coordinator
+    /// actually uses), matching how cooldownViaUsageHistoryRecordAndSamplesPath complements
+    /// CompositionTests.testSchedulerCooldownFromRealAnalysis above.
+    @Test func cooldownMidRampViaUsageHistoryIsStrictlyBetweenBounds() async throws {
+        let fixture = UsageHistoryTestFixture()
+        let history = fixture.history
+
+        let now = Date()
+        let resetsAt = now.addingTimeInterval(3600)
+        let entry = WindowEntry(
+            key: "five_hour", duration: 18000, durationLabel: "5h", modelScope: nil,
+            window: UsageWindow(utilization: 20, resetsAt: resetsAt)
+        )
+
+        // Two samples, both at 20%, spanning exactly the ramp's midpoint (well beyond the
+        // 30s dedup interval, so both are stored).
+        let midRampTslc = (Constants.Polling.cooldownStart + Constants.Polling.cooldownEnd) / 2
+        history.record(entries: [entry], at: now.addingTimeInterval(-midRampTslc))
+        history.record(entries: [entry], at: now)
+
+        let samples = history.samples(for: entry)
+        #expect(samples.count == 2, "both samples should be stored")
+
+        let analysis = UsageHistory.analyze(entry: entry, samples: samples, now: now)
+        let tslc = try #require(analysis.timeSinceLastChange)
+        #expect(tslc > Constants.Polling.cooldownStart)
+        #expect(tslc < Constants.Polling.cooldownEnd)
+
+        var scheduler = PollingScheduler()
+        scheduler.adjustPollingRate(windowAnalyses: [analysis])
+
+        #expect(scheduler.effectivePollingInterval > Constants.Polling.baseInterval,
+                "mid-ramp interval must be strictly greater than the pre-cooldown baseInterval")
+        #expect(scheduler.effectivePollingInterval < Constants.Polling.maxIdleInterval,
+                "mid-ramp interval must be strictly less than the fully-idle cap")
     }
 
     // MARK: - Test 4: Credential swap clears windowAnalyses
@@ -127,7 +166,6 @@ import Foundation
         #expect(coordinator.windowAnalyses.isEmpty,
                 "windowAnalyses must be cleared when org ID changes")
 
-        await fixture.cleanup()
     }
 
     // MARK: - Test 5: UsageHistory.switchOrganization clears history and analyses
@@ -182,6 +220,135 @@ import Foundation
         #expect(scheduler.effectivePollingInterval == Constants.Polling.baseInterval,
                 "with no outpacing and no history, interval should be baseInterval=60s")
 
-        await fixture.cleanup()
+    }
+
+    // MARK: - Test 6: cross-organisation data bleed when a fetch is in flight during an org switch
+
+    /// A single-waiter, single-signaller rendezvous used to deterministically suspend a
+    /// mock fetch until the test explicitly releases it, and to let the test wait until the
+    /// fetch has genuinely started (and is suspended inside it) before proceeding. No
+    /// `Task.sleep`/`Task.yield` polling anywhere — both transitions are driven by
+    /// `CheckedContinuation`, so the test is deterministic under load.
+    private actor Gate {
+        private var isOpen = false
+        private var waiter: CheckedContinuation<Void, Never>?
+
+        func open() {
+            isOpen = true
+            waiter?.resume()
+            waiter = nil
+        }
+
+        func wait() async {
+            if isOpen { return }
+            await withCheckedContinuation { continuation in
+                waiter = continuation
+            }
+        }
+    }
+
+    /// Constructs the cross-organisation data bleed race: a usage fetch starts under org A,
+    /// suspends mid-flight (via `MockUsageService.beforeReturn`), the test switches the live
+    /// coordinator to org B while that fetch is still suspended, then releases the fetch so
+    /// org A's stale response resumes and completes `refresh()`.
+    ///
+    /// `refreshUsage()` (`DataCoordinator+Refresh.swift`) captures `credentials.orgId` before
+    /// the `await`, but performs no re-check of the *current* org after it resumes — it
+    /// unconditionally sets `currentUsage = response` and returns `.fresh(response)`, which
+    /// `refresh()` then unconditionally feeds into `usageHistory.record(...)`,
+    /// `archiveMissingWindows`, and `save()`. `UsageHistory.storage`/`organizationId` are
+    /// switched synchronously and eagerly by `switchOrganization` (`UsageHistory.swift`), so by
+    /// the time org A's response resumes, `usageHistory` already belongs to org B — meaning a
+    /// pass records org A's samples into org B's in-memory storage and persists them to org B's
+    /// on-disk directory.
+    ///
+    /// If this test fails, it proves exactly that: a real, unguarded race where a stale
+    /// cross-organisation usage response corrupts the newly-selected organization's stored
+    /// history. `UsageHistory`'s own `generation` counter already guards `archiveWindow`
+    /// against a suspended archive resurrecting stale data post-switch (see its doc comment)
+    /// but `record()`/`refresh()`'s fresh-response path has no equivalent guard.
+    @Test func staleFetchDuringOrgSwitchDoesNotBleedIntoNewOrganization() async throws {
+        let mockStatus = MockStatusService()
+        let mockUsage = MockUsageService()
+        let mockIdleProvider = MockSystemIdleProvider()
+
+        let orgA = "org-a-\(UUID().uuidString)"
+        let orgB = "org-b-\(UUID().uuidString)"
+        final class OrgIdBox: @unchecked Sendable { var value: String; init(_ v: String) { value = v } }
+        let orgIdBox = OrgIdBox(orgA)
+        let fixture = UsageHistoryTestFixture()
+        let coordinator = DataCoordinator(
+            statusService: mockStatus,
+            usageService: mockUsage,
+            systemIdleProvider: mockIdleProvider,
+            loadCredential: { key in
+                switch key {
+                case Constants.Keychain.cookieString: return "test-cookie"
+                case Constants.Keychain.organizationId: return orgIdBox.value
+                default: return nil
+                }
+            },
+            usageHistory: fixture.history
+        )
+
+        // Org A's response uses a distinctive utilization value (91%) unlikely to collide
+        // with any other value used in this test.
+        let orgAResetsAt = Date().addingTimeInterval(3600)
+        let orgAEntry = WindowEntry(
+            key: "five_hour", duration: 18000, durationLabel: "5h", modelScope: nil,
+            window: UsageWindow(utilization: 91, resetsAt: orgAResetsAt)
+        )
+        mockUsage.result = .success(UsageResponse(entries: [orgAEntry]))
+
+        let fetchStarted = Gate()
+        let releaseFetch = Gate()
+        mockUsage.beforeReturn = {
+            await fetchStarted.open()
+            await releaseFetch.wait()
+        }
+
+        // Start org A's refresh() as a genuinely in-flight, unawaited Task.
+        let refreshTask = Task { await coordinator.refresh() }
+
+        // Wait until the fetch has actually started (and is suspended inside `beforeReturn`)
+        // before switching organizations, so the switch provably lands mid-flight.
+        await fetchStarted.wait()
+
+        // Switch the live coordinator to org B while org A's fetch is still suspended, via the
+        // production org-switch path (reloadCredentials(), called synchronously by
+        // restartPolling()).
+        orgIdBox.value = orgB
+        coordinator.restartPolling()
+        // restartPolling() also spawns a new poll task; cancel it immediately so it doesn't
+        // perform its own concurrent refresh() and confound this test's single controlled race.
+        coordinator.pollTask?.cancel()
+
+        #expect(coordinator.windowAnalyses.isEmpty,
+                "switching org must clear windowAnalyses before org A's stale fetch resumes")
+
+        // Release org A's suspended fetch and let refresh() run to completion.
+        await releaseFetch.open()
+        await refreshTask.value
+
+        // Org A's stale utilization (91%) must never appear in org B's in-memory state.
+        let orgAIdentity = orgAEntry.storageIdentity
+        let bleedIntoCurrentUsage = coordinator.currentUsage?.entries.contains {
+            $0.storageIdentity == orgAIdentity && $0.window.utilization == 91
+        } ?? false
+        #expect(!bleedIntoCurrentUsage,
+                "org A's 91% utilization must not appear in currentUsage after switching to org B")
+
+        let bleedIntoAnalyses = coordinator.windowAnalyses.contains {
+            $0.entry.storageIdentity == orgAIdentity && $0.entry.window.utilization == 91
+        }
+        #expect(!bleedIntoAnalyses,
+                "org A's 91% utilization must not appear in windowAnalyses after switching to org B")
+
+        // Org B's UsageHistory (same in-memory `usageHistory`, now pointed at org B) must
+        // contain none of org A's samples for this identity.
+        let orgBSamples = fixture.history.samples(for: orgAEntry)
+        let bleedIntoHistory = orgBSamples.contains { $0.utilization == 91 }
+        #expect(!bleedIntoHistory,
+                "org A's 91% sample must not be recorded into org B's UsageHistory storage")
     }
 }

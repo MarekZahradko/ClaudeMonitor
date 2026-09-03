@@ -50,8 +50,8 @@
   "error.rate_limited": "Sebességkorlát — túl sok kérés",
   "error.unauthorized": "Munkamenet lejárt — frissítse a cookie-t a Beállításokban",
   "error.unexpected_status": "Váratlan HTTP %1$ld",
+  "graph.credit.description": "használati jóváírás: %1$ld%% → %2$ld%%",
   "graph.now": "most",
-  "graph.placeholder": "Nincs visszaállítási adat",
   "graph.stats.blocked": "blokkolt · visszaáll: %1$@",
   "graph.stats.blocked_date": "blokkolt · visszaáll: %1$@",
   "graph.stats.collecting": "adatgyűjtés…",
@@ -85,6 +85,13 @@
   "prefs.button.save": "Mentés",
   "prefs.launch_at_login": "Indítás bejelentkezéskor",
   "prefs.reset_sound": "Hang lejátszása kritikus korlát visszaállásakor",
+  "prefs.retention.label": "Használati előzmények megőrzése (évek):",
+  "prefs.retention.confirm.title": "Törli az archivált előzményeket?",
+  "prefs.retention.confirm.years_phrase": "%1$ld évre",
+  "prefs.retention.confirm.windows_phrase": "%1$ld archivált használati ablakot",
+  "prefs.retention.confirm.message": "A megőrzési idő %1$@ csökkentése véglegesen töröl %2$@. Ez nem vonható vissza.",
+  "prefs.retention.confirm.delete_button": "Törlés",
+  "prefs.retention.confirm.cancel_button": "Mégse",
   "prefs.window.title": "Claude Monitor – Beállítások",
   "setup.button.skip": "Kihagyás",
   "setup.button.start": "Kezdés",
@@ -96,5 +103,9 @@
   "status.operational": "Működik",
   "status.partial_outage": "Részleges kimaradás",
   "status.unknown": "Ismeretlen",
-  "window.scope.all": "összes"
+  "window.scope.all": "összes",
+  "menu.history.saveFailing": "A előzmények mentése sikertelen (%@ óta)",
+  "menu.history.quarantinedCount": {
+    "other": "%1$ld karanténba helyezett előzményfájl"
+  }
 }

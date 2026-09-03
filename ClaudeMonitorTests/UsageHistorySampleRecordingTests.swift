@@ -13,7 +13,6 @@ import Testing
         let samples = history.samples(for: entry)
         #expect(samples.count == 1)
         #expect(samples[0].utilization == 42)
-        await fixture.cleanup()
     }
 
     @Test @MainActor func recordDeduplicatesSameUtilization() async {
@@ -27,7 +26,6 @@ import Testing
         history.record(entries: [entry2], at: soon)
         let samples = history.samples(for: entry2)
         #expect(samples.count == 1)
-        await fixture.cleanup()
     }
 
     @Test @MainActor func recordAllowsSameUtilizationAfterDeduplicationInterval() async {
@@ -41,7 +39,6 @@ import Testing
         history.record(entries: [entry2], at: later)
         let samples = history.samples(for: entry2)
         #expect(samples.count == 2)
-        await fixture.cleanup()
     }
 
     @Test @MainActor func recordDifferentUtilizationAlwaysAdded() async {
@@ -55,10 +52,12 @@ import Testing
         history.record(entries: [entry2], at: soon)
         let samples = history.samples(for: entry2)
         #expect(samples.count == 2)
-        await fixture.cleanup()
     }
 
-    @Test @MainActor func pruneRemovesOldSamples() async {
+    // record() no longer prunes by age or by a derived window boundary — ownership is by
+    // explicit WindowInstance, and only an archive (via detectAndHandleReset) ever removes
+    // samples from the current instance. See UsageHistoryWindowBoundaryPruningTests.swift.
+    @Test @MainActor func recordNeverPrunesOldSamplesByAge() async {
         let fixture = UsageHistoryTestFixture()
         let history = fixture.history
         let duration: TimeInterval = 18000
@@ -71,8 +70,37 @@ import Testing
         history.record(entries: [freshEntry], at: now)
 
         let samples = history.samples(for: freshEntry)
-        #expect(samples.count == 1)
-        #expect(samples[0].utilization == 20)
-        await fixture.cleanup()
+        #expect(samples.count == 2)
+        #expect(samples.map(\.utilization) == [10, 20])
+    }
+
+    /// A `.credit` event's `fromTimestamp` must be the previous sample's own timestamp — the
+    /// single fact `record()` knows with certainty at the moment it observes the drop — not
+    /// something reconstructed later by searching the samples array.
+    @Test @MainActor func recordedEventCarriesPreviousSampleTimestampAsOrigin() async {
+        let fixture = UsageHistoryTestFixture()
+        let history = fixture.history
+        let now = Date()
+        let resetsAt = now.addingTimeInterval(3600)
+
+        let t1 = now.addingTimeInterval(-600)
+        let t2 = now
+
+        let e1 = makeEntry(key: "five_hour", utilization: 50, resetsAt: resetsAt)
+        let e2 = makeEntry(key: "five_hour", utilization: 40, resetsAt: resetsAt)
+
+        history.record(entries: [e1], at: t1)
+        history.record(entries: [e2], at: t2)
+
+        let samples = history.samples(for: e2)
+        #expect(samples.map(\.timestamp) == [t1, t2], "Sanity check: the previous sample really is at t1.")
+
+        let events = history.storage[e2.storageIdentity]?.events ?? []
+        #expect(events.count == 1)
+        #expect(events.first?.kind == .credit, "A utilization drop must be recorded as a credit event, never a reset.")
+        #expect(events.first?.from == 50, "Event must carry the utilization it dropped FROM.")
+        #expect(events.first?.to == 40, "Event must carry the utilization it dropped TO.")
+        #expect(events.first?.at == t2)
+        #expect(events.first?.fromTimestamp == t1, "fromTimestamp must equal the immediately preceding sample's own timestamp.")
     }
 }

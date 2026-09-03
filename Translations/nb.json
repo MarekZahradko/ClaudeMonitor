@@ -50,8 +50,8 @@
   "error.rate_limited": "Frekvensbegrenset – for mange forespørsler",
   "error.unauthorized": "Økten er utløpt – oppdater informasjonskapsel i Innstillinger",
   "error.unexpected_status": "Uventet HTTP %1$ld",
+  "graph.credit.description": "brukskreditt: %1$ld%% → %2$ld%%",
   "graph.now": "nå",
-  "graph.placeholder": "Ingen nullstillingsdata",
   "graph.stats.blocked": "blokkert · nullstilles kl. %1$@",
   "graph.stats.blocked_date": "blokkert · nullstilles %1$@",
   "graph.stats.collecting": "samler data…",
@@ -85,6 +85,16 @@
   "prefs.button.save": "Arkiver",
   "prefs.launch_at_login": "Start ved innlogging",
   "prefs.reset_sound": "Spill lyd når kritisk grense tilbakestilles",
+  "prefs.retention.label": "Behold brukshistorikk (år):",
+  "prefs.retention.confirm.title": "Slette arkivert historikk?",
+  "prefs.retention.confirm.years_phrase": "%1$ld år",
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld arkivert bruksvindu",
+    "other": "%1$ld arkiverte bruksvinduer"
+  },
+  "prefs.retention.confirm.message": "Hvis du reduserer oppbevaringstiden til %1$@, slettes %2$@ permanent. Dette kan ikke angres.",
+  "prefs.retention.confirm.delete_button": "Slett",
+  "prefs.retention.confirm.cancel_button": "Avbryt",
   "prefs.window.title": "Claude Monitor – Innstillinger",
   "setup.button.skip": "Hopp over",
   "setup.button.start": "Kom i gang",
@@ -96,5 +106,10 @@
   "status.operational": "I drift",
   "status.partial_outage": "Delvis avbrudd",
   "status.unknown": "Ukjent",
-  "window.scope.all": "alle"
+  "window.scope.all": "alle",
+  "menu.history.saveFailing": "Lagring av historikk feiler (siden %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld karantenesatt historikkfil",
+    "other": "%1$ld karantenesatte historikkfiler"
+  }
 }

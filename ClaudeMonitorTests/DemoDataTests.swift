@@ -4,32 +4,45 @@ import Foundation
 
 struct DemoDataTests {
 
-    @Test func scenario1ReturnsValidData() {
+    @Test func scenario1DemonstratesOutageWithIncidents() {
         let frame = DemoData.scenario(1)
-        #expect(!frame.usage.entries.isEmpty)
-        #expect(!frame.status.components.isEmpty)
-        #expect(!frame.status.incidents.isEmpty) // scenario 1 has incidents
+        // Scenario 1 exists to demonstrate the menu bar's outage icon and the incident list —
+        // so its worst component must actually be worse than operational, and there must be
+        // more than one incident to show the incident list rendering multiple entries.
+        let worst = frame.status.components.map(\.status).max()
+        #expect(worst != nil && worst! > .operational)
+        #expect(frame.status.incidents.count == 2)
+        #expect(frame.usage.entries.map(\.key).contains("five_hour"))
+        #expect(frame.usage.entries.map(\.key).contains("seven_day"))
     }
 
-    @Test func scenario2ReturnsValidData() {
+    @Test func scenario2DemonstratesDegradedPerformanceWithOneIncident() {
         let frame = DemoData.scenario(2)
-        #expect(!frame.usage.entries.isEmpty)
-        #expect(!frame.status.components.isEmpty)
-        #expect(!frame.status.incidents.isEmpty) // scenario 2 has an incident
+        // Scenario 2 demonstrates a milder, single-incident case than scenario 1.
+        #expect(frame.status.components.contains { $0.status == .degradedPerformance })
+        #expect(frame.status.incidents.count == 1)
+        #expect(frame.usage.entries.map(\.key).contains("five_hour"))
+        #expect(frame.usage.entries.map(\.key).contains("seven_day"))
     }
 
-    @Test func scenario3ReturnsValidData() {
+    @Test func scenario3DemonstratesHighUtilizationWithNoIncidents() {
         let frame = DemoData.scenario(3)
-        #expect(!frame.usage.entries.isEmpty)
-        #expect(!frame.status.components.isEmpty)
-        #expect(frame.status.incidents.isEmpty) // scenario 3 has no incidents
+        // Scenario 3 demonstrates all-systems-operational alongside near-limit usage, so the
+        // orange/red usage styling — not the status icon — is what's on display.
+        #expect(frame.status.components.allSatisfy { $0.status == .operational })
+        #expect(frame.status.incidents.isEmpty)
+        #expect(frame.usage.entries.contains { $0.window.utilization >= 80 })
+        // Scenario 3 additionally demonstrates a model-specific window alongside an all-model one.
+        #expect(frame.usage.entries.contains { $0.modelScope != nil })
     }
 
-    @Test func scenario4ReturnsValidData() {
+    @Test func scenario4DemonstratesBlockedWindowWithNoIncidents() {
         let frame = DemoData.scenario(4)
-        #expect(!frame.usage.entries.isEmpty)
-        #expect(!frame.status.components.isEmpty)
-        #expect(frame.status.incidents.isEmpty) // scenario 4 has no incidents
+        // Scenario 4 demonstrates a fully-blocked (>=100%) window with everything else healthy.
+        #expect(frame.status.components.allSatisfy { $0.status == .operational })
+        #expect(frame.status.incidents.isEmpty)
+        #expect(frame.usage.entries.contains { $0.window.utilization >= 100 })
+        #expect(frame.usage.entries.contains { $0.modelScope != nil })
     }
 
     @Test func scenario4HasBlockedWindow() {
@@ -114,17 +127,35 @@ struct DemoDataTests {
         }
     }
 
-    @Test @MainActor func demoSamplesProduceNonTrivialAnalyses() {
-        let now = Date()
+    @Test @MainActor func demoSamplesProduceOrderedTrackedAnalyses() {
         for i in 1...7 {
             let frame = DemoData.scenario(i)
+            // `now` must be captured AFTER the frame, never before the loop: demo samples are
+            // generated relative to the wall clock at construction time, so a `now` taken
+            // earlier sits microseconds BEFORE the final sample and makes timeSinceLastChange
+            // legitimately negative — a fixture-ordering artefact, not a defect in analyze().
+            let now = Date()
             for entry in frame.usage.entries {
                 guard let entrySamples = frame.samples[entry.key], !entrySamples.isEmpty else { continue }
                 let analysis = UsageHistory.analyze(entry: entry, samples: entrySamples, now: now)
-                #expect(!analysis.segments.isEmpty,
-                        "Scenario \(i), key \(entry.key): analysis has no segments")
-                #expect(analysis.timeSinceLastChange != nil,
-                        "Scenario \(i), key \(entry.key): timeSinceLastChange is nil")
+
+                // Demo samples are real polled data points, so their analysis must actually
+                // contain a tracked segment (not just an inferred or gap segment).
+                #expect(analysis.segments.contains { $0.kind == .tracked },
+                        "Scenario \(i), key \(entry.key): analysis has no tracked segment")
+
+                // Segments must reproduce the samples in chronological order — a shuffled or
+                // reversed segmentation would still pass a mere "not empty" check.
+                let timestamps = analysis.segments.flatMap { $0.samples.map(\.timestamp) }
+                #expect(zip(timestamps, timestamps.dropFirst()).allSatisfy { $0 <= $1 },
+                        "Scenario \(i), key \(entry.key): segment samples are not chronologically ordered")
+
+                if let timeSinceLastChange = analysis.timeSinceLastChange {
+                    #expect(timeSinceLastChange >= 0,
+                            "Scenario \(i), key \(entry.key): timeSinceLastChange is negative")
+                } else {
+                    Issue.record("Scenario \(i), key \(entry.key): timeSinceLastChange is nil")
+                }
             }
         }
     }

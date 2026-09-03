@@ -62,7 +62,6 @@ import AppKit
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         // First refresh produces one sample — recentRate requires ≥2 samples, so the
         // rate-driven formula is inactive. Scheduler falls back to cooldownInterval,
@@ -100,7 +99,6 @@ import AppKit
 
         // Second refresh: utilization = 45
         await coordinator.refresh()
-        await fixture.cleanup()
 
         // The WindowAnalysis should reflect a utilization change between the two refreshes.
         let analyses = coordinator.monitorState.usage.windowAnalyses
@@ -132,7 +130,6 @@ import AppKit
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         let state = coordinator.monitorState
 
@@ -207,6 +204,43 @@ import AppKit
         #expect(scheduler.effectivePollingInterval == Constants.Polling.maxIdleInterval)
     }
 
+    // MARK: - Test 5b: Scheduler cooldown mid-ramp is strictly between bounds
+
+    /// Guards against the ramp collapsing into a step function (jumping straight from
+    /// baseInterval to maxIdleInterval at cooldownStart instead of interpolating). Picks a
+    /// timeSinceLastChange strictly between cooldownStart and cooldownEnd and asserts the
+    /// resulting interval is strictly between the pre-cooldown interval and the idle cap —
+    /// without recomputing the production interpolation formula.
+    @Test func testSchedulerCooldownMidRampIsStrictlyBetweenBounds() {
+        let now = Date()
+        let resetsAt = now.addingTimeInterval(3600)
+        let entry = WindowEntry(
+            key: "five_hour", duration: 18000, durationLabel: "5h", modelScope: nil,
+            window: UsageWindow(utilization: 20, resetsAt: resetsAt)
+        )
+
+        // Two samples, both at 20%, spanning exactly the ramp's midpoint.
+        let midRampTslc = (Constants.Polling.cooldownStart + Constants.Polling.cooldownEnd) / 2
+        let samples = [
+            UtilizationSample(utilization: 20, timestamp: now.addingTimeInterval(-midRampTslc)),
+            UtilizationSample(utilization: 20, timestamp: now),
+        ]
+
+        let analysis = UsageHistory.analyze(entry: entry, samples: samples, now: now)
+
+        #expect(analysis.timeSinceLastChange != nil)
+        #expect(analysis.timeSinceLastChange! > Constants.Polling.cooldownStart)
+        #expect(analysis.timeSinceLastChange! < Constants.Polling.cooldownEnd)
+
+        var scheduler = PollingScheduler()
+        scheduler.adjustPollingRate(windowAnalyses: [analysis])
+
+        #expect(scheduler.effectivePollingInterval > Constants.Polling.baseInterval,
+                "mid-ramp interval must be strictly greater than the pre-cooldown baseInterval")
+        #expect(scheduler.effectivePollingInterval < Constants.Polling.maxIdleInterval,
+                "mid-ramp interval must be strictly less than the fully-idle cap")
+    }
+
     // MARK: - Test 6: restartPolling resets currentPollInterval in MonitorState
 
     /// Tests that restartPolling() resets the scheduler back to baseInterval.
@@ -219,7 +253,6 @@ import AppKit
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         // After a successful refresh, currentPollInterval is set.
         let stateAfterRefresh = coordinator.monitorState
@@ -245,7 +278,6 @@ import AppKit
         // Change mock to return auth failure → currentUsage becomes nil.
         mockUsage.result = .failure(ServiceError.unauthorized)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         let secondState = coordinator.monitorState
         #expect(secondState.usage.currentUsage == nil)

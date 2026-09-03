@@ -6,13 +6,13 @@ extension GraphDrawer {
             let isLastSegment = index == segments.count - 1
             switch segment.kind {
             case .tracked:
-                var samples = segment.samples
+                var samples = GraphDrawer.plottableSamples(segment.samples, in: timeRange)
                 if isLastSegment {
                     samples.append(UtilizationSample(utilization: Int(currentUtil), timestamp: now))
                 }
                 drawTrackedSegment(samples, in: rect, timeRange: timeRange)
             case .inferred:
-                drawInferredSegment(segment.samples, in: rect, timeRange: timeRange)
+                drawInferredSegment(GraphDrawer.plottableSamples(segment.samples, in: timeRange), in: rect, timeRange: timeRange)
             case .gap:
                 drawGapSegment(segment.samples, in: rect, timeRange: timeRange)
             }
@@ -74,14 +74,19 @@ extension GraphDrawer {
     private func drawGapSegment(_ samples: [UtilizationSample], in rect: NSRect, timeRange: ClosedRange<Date>) {
         guard samples.count >= 2 else { return }
         let before = samples[0], after = samples[1]
-        let x0 = xPosition(for: before.timestamp, in: rect, timeRange: timeRange)
-        let x1 = xPosition(for: after.timestamp, in: rect, timeRange: timeRange)
+        guard let clipped = GraphDrawer.clipGapSegment(before: before, after: after, in: timeRange) else { return }
+
+        let x0 = xPosition(for: clipped.hatchStart, in: rect, timeRange: timeRange)
+        let x1 = xPosition(for: clipped.hatchEnd, in: rect, timeRange: timeRange)
         let gapRect = NSRect(x: x0, y: rect.minY, width: x1 - x0, height: rect.height)
         drawGapHatch(in: gapRect)
-        drawGapDashedLine(
-            from: NSPoint(x: x0, y: yPosition(for: Double(before.utilization), in: rect)),
-            to: NSPoint(x: x1, y: yPosition(for: Double(after.utilization), in: rect))
-        )
+
+        if let line = clipped.line {
+            drawGapDashedLine(
+                from: NSPoint(x: xPosition(for: line.before.timestamp, in: rect, timeRange: timeRange), y: yPosition(for: Double(line.before.utilization), in: rect)),
+                to: NSPoint(x: xPosition(for: line.after.timestamp, in: rect, timeRange: timeRange), y: yPosition(for: Double(line.after.utilization), in: rect))
+            )
+        }
     }
 
     private func drawGapHatch(in gapRect: NSRect) {

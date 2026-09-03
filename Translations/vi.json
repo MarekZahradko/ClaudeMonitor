@@ -50,8 +50,8 @@
   "error.rate_limited": "Bị giới hạn tốc độ – quá nhiều yêu cầu",
   "error.unauthorized": "Phiên hết hạn – cập nhật cookie trong Tùy chọn",
   "error.unexpected_status": "HTTP %1$ld không mong đợi",
+  "graph.credit.description": "tín dụng sử dụng: %1$ld%% → %2$ld%%",
   "graph.now": "hiện tại",
-  "graph.placeholder": "Không có dữ liệu đặt lại",
   "graph.stats.blocked": "bị chặn · đặt lại lúc %1$@",
   "graph.stats.blocked_date": "bị chặn · đặt lại %1$@",
   "graph.stats.collecting": "đang thu thập dữ liệu…",
@@ -85,6 +85,13 @@
   "prefs.button.save": "Lưu",
   "prefs.launch_at_login": "Khởi chạy khi đăng nhập",
   "prefs.reset_sound": "Phát âm thanh khi giới hạn nghiêm trọng được đặt lại",
+  "prefs.retention.label": "Lưu giữ lịch sử sử dụng (năm):",
+  "prefs.retention.confirm.title": "Xóa lịch sử đã lưu trữ?",
+  "prefs.retention.confirm.years_phrase": "%1$ld năm",
+  "prefs.retention.confirm.windows_phrase": "%1$ld cửa sổ sử dụng đã lưu trữ",
+  "prefs.retention.confirm.message": "Giảm thời gian lưu giữ xuống %1$@ sẽ xóa vĩnh viễn %2$@. Hành động này không thể hoàn tác.",
+  "prefs.retention.confirm.delete_button": "Xóa",
+  "prefs.retention.confirm.cancel_button": "Hủy",
   "prefs.window.title": "Claude Monitor – Tùy chọn",
   "setup.button.skip": "Bỏ qua",
   "setup.button.start": "Bắt đầu",
@@ -96,5 +103,9 @@
   "status.operational": "Hoạt động",
   "status.partial_outage": "Gián đoạn một phần",
   "status.unknown": "Không xác định",
-  "window.scope.all": "tất cả"
+  "window.scope.all": "tất cả",
+  "menu.history.saveFailing": "Việc lưu lịch sử đang thất bại (kể từ %@)",
+  "menu.history.quarantinedCount": {
+    "other": "%1$ld tệp lịch sử bị cách ly"
+  }
 }

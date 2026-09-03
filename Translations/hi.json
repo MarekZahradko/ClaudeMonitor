@@ -50,8 +50,8 @@
   "error.rate_limited": "दर सीमित – बहुत अधिक अनुरोध",
   "error.unauthorized": "सत्र समाप्त – प्राथमिकताओं में Cookie अपडेट करें",
   "error.unexpected_status": "अप्रत्याशित HTTP %1$ld",
+  "graph.credit.description": "उपयोग क्रेडिट: %1$ld%% → %2$ld%%",
   "graph.now": "अभी",
-  "graph.placeholder": "कोई रीसेट डेटा नहीं",
   "graph.stats.blocked": "अवरुद्ध · %1$@ पर रीसेट",
   "graph.stats.blocked_date": "अवरुद्ध · %1$@ रीसेट",
   "graph.stats.collecting": "डेटा एकत्र हो रहा है…",
@@ -85,6 +85,13 @@
   "prefs.button.save": "सहेजें",
   "prefs.launch_at_login": "लॉगिन पर लॉन्च करें",
   "prefs.reset_sound": "गंभीर सीमा रीसेट होने पर ध्वनि चलाएँ",
+  "prefs.retention.label": "उपयोग इतिहास रखें (वर्ष):",
+  "prefs.retention.confirm.title": "संग्रहीत इतिहास हटाएं?",
+  "prefs.retention.confirm.years_phrase": "%1$ld वर्ष",
+  "prefs.retention.confirm.windows_phrase": "%1$ld संग्रहीत उपयोग विंडो",
+  "prefs.retention.confirm.message": "प्रतिधारण को %1$@ तक घटाने से %2$@ स्थायी रूप से हट जाएंगी। इसे पूर्ववत नहीं किया जा सकता।",
+  "prefs.retention.confirm.delete_button": "हटाएं",
+  "prefs.retention.confirm.cancel_button": "रद्द करें",
   "prefs.window.title": "Claude Monitor – प्राथमिकताएँ",
   "setup.button.skip": "छोड़ें",
   "setup.button.start": "शुरू करें",
@@ -96,5 +103,9 @@
   "status.operational": "सक्रिय",
   "status.partial_outage": "आंशिक आउटेज",
   "status.unknown": "अज्ञात",
-  "window.scope.all": "सभी"
+  "window.scope.all": "सभी",
+  "menu.history.saveFailing": "इतिहास सहेजना विफल हो रहा है (%@ से)",
+  "menu.history.quarantinedCount": {
+    "other": "%1$ld क्वारंटीन की गई इतिहास फ़ाइलें"
+  }
 }

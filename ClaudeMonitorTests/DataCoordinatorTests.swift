@@ -30,7 +30,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         #expect(coordinator.currentStatus == (try? mockStatus.result.get()))
         #expect(coordinator.currentUsage == (try? mockUsage.result.get()))
@@ -43,7 +42,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         #expect(mockStatus.fetchCount == 1)
         #expect(mockUsage.fetchCount == 1)
@@ -53,7 +51,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, orgId) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         #expect(mockUsage.lastOrgId == orgId)
         #expect(mockUsage.lastCookie == "test-cookie")
@@ -66,7 +63,6 @@ import Foundation
         coordinator.onUpdate = { updateCount += 1 }
 
         await coordinator.refresh()
-        await fixture.cleanup()
 
         #expect(updateCount == 1)
     }
@@ -75,7 +71,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         #expect(coordinator.scheduler.statusState.lastSuccess != nil)
         #expect(coordinator.scheduler.usageState.lastSuccess != nil)
@@ -89,7 +84,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture, credentials: [:])
         await coordinator.refresh()
-        await fixture.cleanup()
 
         #expect(coordinator.usageError == "Configure credentials in Preferences")
         #expect(mockUsage.fetchCount == 0)
@@ -102,7 +96,6 @@ import Foundation
             Constants.Keychain.organizationId: "org",
         ])
         await coordinator.refresh()
-        await fixture.cleanup()
 
         #expect(coordinator.usageError == "Configure credentials in Preferences")
         #expect(mockUsage.fetchCount == 0)
@@ -112,7 +105,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture, credentials: [:])
         await coordinator.refresh()
-        await fixture.cleanup()
 
         #expect(mockStatus.fetchCount == 1)
         #expect(coordinator.currentStatus == (try? mockStatus.result.get()))
@@ -121,14 +113,12 @@ import Foundation
     @Test func hasCredentialsReturnsFalseWhenMissing() async {
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture, credentials: [:])
-        await fixture.cleanup()
         #expect(!coordinator.hasCredentials)
     }
 
     @Test func hasCredentialsReturnsTrueWhenPresent() async {
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
-        await fixture.cleanup()
         #expect(coordinator.hasCredentials)
     }
 
@@ -138,7 +128,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         let state = coordinator.monitorState
         #expect(state.usage.currentUsage == (try? mockUsage.result.get()))
@@ -152,7 +141,6 @@ import Foundation
     @Test func monitorStateWithNoCredentials() async {
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture, credentials: [:])
-        await fixture.cleanup()
         let state = coordinator.monitorState
 
         #expect(!state.hasCredentials)
@@ -170,7 +158,6 @@ import Foundation
 
         mockUsage.result = .success(TestFixtures.usage())
         coordinator.restartPolling()
-        await fixture.cleanup()
 
         #expect(coordinator.scheduler.usageState.consecutiveFailures == 0)
         #expect(coordinator.scheduler.effectivePollingInterval == Constants.Polling.baseInterval)
@@ -187,7 +174,6 @@ import Foundation
         await coordinator.refresh()
         await coordinator.refresh()
         await coordinator.refresh()
-        await fixture.cleanup()
 
         #expect(updateCount == 3)
     }
@@ -198,7 +184,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         // testUsage has 42% and 18% utilization — projected well below 100%, so no urgency-driven
         // ramp-up. The interval must be >= baseInterval (never below it), but may exceed baseInterval
@@ -246,7 +231,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         let analyses = coordinator.monitorState.usage.windowAnalyses
         #expect(!analyses.isEmpty)
@@ -257,7 +241,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         let analyses = coordinator.monitorState.usage.windowAnalyses
         let analysisKeys = Set(analyses.map(\.entry.key))
@@ -278,7 +261,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         #expect(coordinator.scheduler.isAwayMode == false)
     }
@@ -290,7 +272,6 @@ import Foundation
         let fixture = UsageHistoryTestFixture()
         let (coordinator, _) = coordinator(fixture: fixture)
         await coordinator.refresh()
-        await fixture.cleanup()
 
         #expect(mockStatus.fetchCount == 0)
         #expect(mockUsage.fetchCount == 0)
@@ -318,7 +299,6 @@ import Foundation
         for _ in 0..<Constants.Retry.warnThreshold {
             await coordinator.refresh()
         }
-        await fixture.cleanup()
 
         #expect(coordinator.monitorState.polling.hasRecentFailure == true)
         #expect(coordinator.monitorState.polling.isAnyServiceStale == false)
@@ -331,7 +311,6 @@ import Foundation
         for _ in 0..<Constants.Retry.failureThreshold {
             await coordinator.refresh()
         }
-        await fixture.cleanup()
 
         #expect(coordinator.monitorState.polling.isAnyServiceStale == true)
     }
@@ -346,7 +325,49 @@ import Foundation
         mockUsage.result = .success(TestFixtures.usage())
         mockStatus.result = .success(TestFixtures.status())
         await coordinator.refresh()
-        await fixture.cleanup()
         #expect(coordinator.monitorState.polling.lastFailedAt == nil)
+    }
+
+    // MARK: - Deallocation
+
+    /// Proves the coordinator can actually be deallocated once its poll task is cancelled
+    /// and every other strong reference is dropped. Before the fix, `pollTask`'s closure
+    /// captured `self` strongly and `pollLoop()` never returns except on cancellation,
+    /// forming a `self -> pollTask -> closure -> self` cycle that kept the object (and its
+    /// `usageHistory`) alive for the rest of the process, no matter what `deinit` did. A
+    /// test that only asserts "the task was cancelled" would not catch that: the cycle keeps
+    /// the object alive even after cancellation, since nothing ever drops the strong
+    /// reference. Checking a `weak` reference actually goes `nil` is the only way to catch it.
+    @Test func coordinatorDeallocatesAfterPollTaskCancelledAndReleased() async {
+        let fixture = UsageHistoryTestFixture()
+        weak var weakCoordinator: DataCoordinator?
+
+        do {
+            let (coordinator, _) = coordinator(fixture: fixture)
+            coordinator.startPolling()
+            weakCoordinator = coordinator
+
+            // Let the poll task actually begin executing — i.e. wait until `refresh()` has been
+            // entered and returned at least once — before cancelling it and dropping the last
+            // strong reference. Note this does NOT prove deallocation mid-`await`: `MockUsageService
+            // .fetch` has no internal suspension point, so by the time `fetchCount` is observed
+            // as non-zero, `await self.refresh()` inside the loop has already completed and `self`
+            // is no longer in scope. What this proves is that real polling actually started (this
+            // isn't cancelling a task before its first iteration ever ran) and that the weak
+            // reference still nils out afterward — the regression this test guards against.
+            for _ in 0..<20 where mockUsage.fetchCount == 0 {
+                await Task.yield()
+            }
+            coordinator.pollTask?.cancel()
+        }
+
+        // Give the cancelled task's suspension points a chance to unwind so the weakly
+        // captured `self` inside the poll loop is not itself the last thing keeping the
+        // object alive.
+        for _ in 0..<50 where weakCoordinator != nil {
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(weakCoordinator == nil)
     }
 }

@@ -1,7 +1,7 @@
 import Foundation
 
 extension UsageHistory {
-    static func segmentSamples(
+    nonisolated static func segmentSamples(
         _ samples: [UtilizationSample],
         windowStart: Date,
         gapThreshold: TimeInterval = Constants.History.gapThreshold
@@ -43,22 +43,47 @@ extension UsageHistory {
         return result
     }
 
-    static func computeRate(
+    /// - Parameter events: mid-window usage credits (see `UsageEvent`) for this window
+    ///   instance. A credit resets the numerator (`currentUtilization` reflects consumption
+    ///   only since the credit) without moving `resetsAt` — so measuring `timeElapsed` from
+    ///   the window's start (as if no credit had happened) would divide a post-credit
+    ///   utilization by a much-too-large denominator, producing a falsely low implied rate and
+    ///   an over-optimistic projection right when the user starts spending a newly granted
+    ///   credit. When one or more credits are present, `timeElapsed` is measured from the MOST
+    ///   RECENT credit's `at` instead of from the window start. Windows with no credits are
+    ///   unaffected — `events` defaults to empty and behavior is identical to before.
+    nonisolated static func computeRate(
         windowDuration: TimeInterval,
         currentUtilization: Int,
         resetsAt: Date?,
+        events: [UsageEvent] = [],
         now: Date = Date()
     ) -> (rate: Double, source: RateSource) {
         guard let resetsAt else { return (0, .insufficient) }
 
-        let timeElapsed = windowDuration - max(0, resetsAt.timeIntervalSince(now))
+        let mostRecentCredit = events.max(by: { $0.at < $1.at })
+
+        let timeElapsed: TimeInterval
+        if let creditAt = mostRecentCredit?.at {
+            // Floor the denominator when the rate is measured from a credit: seconds after a
+            // credit, dividing by the true (tiny) elapsed time would produce an absurd spike
+            // from a single data point (see Constants.Projection.minRateElapsedAfterCredit's
+            // doc comment).
+            timeElapsed = max(now.timeIntervalSince(creditAt), Constants.Projection.minRateElapsedAfterCredit)
+        } else {
+            // No credit: identical to the original (pre-Task-2) formula — deliberately NOT
+            // rewritten in terms of `now - windowStart`, which would (unlike this) grow
+            // unbounded past `windowDuration` once `now` overtakes `resetsAt` (see
+            // `rateWhenNowIsAfterResetsAt`, which pins this exact clamping behavior).
+            timeElapsed = windowDuration - max(0, resetsAt.timeIntervalSince(now))
+        }
         guard timeElapsed > 0 else { return (0, .insufficient) }
 
         let rate = Double(currentUtilization) / timeElapsed
         return (rate, .implied)
     }
 
-    static func project(
+    nonisolated static func project(
         currentUtilization: Int,
         rate: Double,
         timeRemaining: TimeInterval
@@ -74,7 +99,7 @@ extension UsageHistory {
         return (projectedAtReset, timeToLimit)
     }
 
-    static func computeTimeSinceLastChange(
+    nonisolated static func computeTimeSinceLastChange(
         currentUtilization: Int,
         samples: [UtilizationSample],
         now: Date = Date()
@@ -93,7 +118,7 @@ extension UsageHistory {
         return now.timeIntervalSince(samples.first!.timestamp)
     }
 
-    static func computeRecentRate(samples: [UtilizationSample], tau: TimeInterval = Constants.Polling.rateEmaTau) -> Double? {
+    nonisolated static func computeRecentRate(samples: [UtilizationSample], tau: TimeInterval = Constants.Polling.rateEmaTau) -> Double? {
         guard samples.count >= 2 else { return nil }
 
         var ema: Double? = nil
@@ -127,12 +152,13 @@ extension UsageHistory {
         return ema
     }
 
-    static func analyze(entry: WindowEntry, samples: [UtilizationSample], now: Date = Date()) -> WindowAnalysis {
+    nonisolated static func analyze(entry: WindowEntry, samples: [UtilizationSample], events: [UsageEvent] = [], now: Date = Date()) -> WindowAnalysis {
         let timeRemaining = max(0, (entry.window.resetsAt ?? now).timeIntervalSince(now))
         let (rate, source) = computeRate(
             windowDuration: entry.duration,
             currentUtilization: entry.window.utilization,
             resetsAt: entry.window.resetsAt,
+            events: events,
             now: now
         )
         let (projectedAtReset, timeToLimit) = project(
@@ -157,6 +183,7 @@ extension UsageHistory {
         return WindowAnalysis(
             entry: entry,
             samples: samples,
+            events: events,
             consumptionRate: rate,
             projectedAtReset: projectedAtReset,
             timeToLimit: timeToLimit,

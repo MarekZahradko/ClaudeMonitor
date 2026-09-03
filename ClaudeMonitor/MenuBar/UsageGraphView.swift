@@ -135,7 +135,12 @@ final class UsageGraphView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         guard selectedIndex < analyses.count else { return }
-        let drawer = GraphDrawer(analyses: analyses, selectedIndex: selectedIndex, graphRect: currentGraphRect(), now: Date())
+        let drawer = GraphDrawer(
+            analyses: analyses,
+            selectedIndex: selectedIndex,
+            graphRect: currentGraphRect(),
+            now: Date()
+        )
         drawer.draw()
     }
 

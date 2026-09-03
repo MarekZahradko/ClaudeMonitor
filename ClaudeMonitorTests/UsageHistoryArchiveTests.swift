@@ -4,7 +4,7 @@ import Testing
 
 @Suite(.serialized) @MainActor struct ArchiveTests {
 
-    @Test func archiveWindowCreatesCompressedFile() async throws {
+    @Test func archiveWindowCreatesV2File() async throws {
         let fixture = UsageHistoryTestFixture()
         let history = fixture.history
         let testOrgId = UUID().uuidString
@@ -22,12 +22,15 @@ import Testing
                        at: now)
 
         let identity = entry.storageIdentity
-        await history.archiveWindow(identity: identity, resetsAt: resetsAt, windowDuration: entry.duration)
+        await history.archiveWindow(identity: identity, resetsAt: resetsAt, windowDuration: entry.duration, replacingWith: nil)
 
         let files = try fm.contentsOfDirectory(at: archiveDir, includingPropertiesForKeys: nil)
-        let lzmaFiles = files.filter { $0.pathExtension == "lzma" }
-        #expect(!lzmaFiles.isEmpty, "Expected at least one .lzma file in archive directory")
-        await fixture.cleanup()
+        let v2Files = files.filter { $0.pathExtension == Constants.History.windowInstanceFileExtension }
+        #expect(!v2Files.isEmpty, "Expected at least one current-format file in archive directory")
+        if let file = v2Files.first {
+            let decoded = try WindowInstanceCodec.decode(try Data(contentsOf: file))
+            #expect(decoded.samples.map(\.utilization) == [30, 42])
+        }
     }
 
     @Test func pruneArchivesRemovesOldFilesAndKeepsNewOnes() async throws {
@@ -36,7 +39,7 @@ import Testing
         let testOrgId = UUID().uuidString
         history.switchOrganization(testOrgId)
         let fiveHourDuration: TimeInterval = 18000
-        let retentionPeriod = fiveHourDuration * Double(Constants.History.archiveRetentionMultiplier)
+        let retentionYears = 2
         let now = Date()
 
         let fm = FileManager.default
@@ -46,7 +49,9 @@ import Testing
 
         let formatter = archiveDateFormatterForTests()
 
-        let oldEnd = now.addingTimeInterval(-(retentionPeriod + 86400))
+        // Just outside the 2-year cutoff.
+        let cutoff = UsageHistory.retentionCutoff(years: retentionYears, now: now)!
+        let oldEnd = cutoff.addingTimeInterval(-86400)
         let oldStart = oldEnd.addingTimeInterval(-fiveHourDuration)
         let oldFilename = "\(formatter.string(from: oldStart))_\(formatter.string(from: oldEnd)).json.lzma"
         let oldFileURL = identityDir.appendingPathComponent(oldFilename)
@@ -62,38 +67,11 @@ import Testing
         #expect(fm.fileExists(atPath: oldFileURL.path), "Setup: old file must exist before prune")
         #expect(fm.fileExists(atPath: newFileURL.path), "Setup: new file must exist before prune")
 
-        let entry = makeEntry(key: "five_hour", utilization: 0, resetsAt: now.addingTimeInterval(3600))
-        await history.pruneArchives(currentEntries: [entry])
+        await history.pruneArchives(retentionYears: retentionYears, now: now)
 
         #expect(!fm.fileExists(atPath: oldFileURL.path),
                 "Old archive file should have been pruned")
         #expect(fm.fileExists(atPath: newFileURL.path),
                 "New archive file should NOT have been pruned")
-        await fixture.cleanup()
-    }
-
-    @Test func pruneArchivesWithEmptyEntriesDeletesNothing() async throws {
-        let fixture = UsageHistoryTestFixture()
-        let history = fixture.history
-        let testOrgId = UUID().uuidString
-        history.switchOrganization(testOrgId)
-
-        let fm = FileManager.default
-        let identityDir = archiveTestDirectory(baseDirectory: fixture.baseDirectory, orgId: testOrgId)
-        try fm.createDirectory(at: identityDir, withIntermediateDirectories: true)
-
-        let formatter = archiveDateFormatterForTests()
-        let now = Date()
-        let end = now.addingTimeInterval(-3600)
-        let start = end.addingTimeInterval(-18000)
-        let filename = "\(formatter.string(from: start))_\(formatter.string(from: end)).json.lzma"
-        let fileURL = identityDir.appendingPathComponent(filename)
-        try "[]".data(using: .utf8)!.write(to: fileURL)
-
-        await history.pruneArchives(currentEntries: [])
-
-        #expect(fm.fileExists(atPath: fileURL.path),
-                "Archive file must not be deleted when currentEntries is empty")
-        await fixture.cleanup()
     }
 }

@@ -50,8 +50,8 @@
   "error.rate_limited": "Service error: rate limited",
   "error.unauthorized": "Service error: session cookie expired",
   "error.unexpected_status": "Service error: unexpected HTTP status code. %ld is the status code number.",
+  "graph.credit.description": "Graph stats row / tooltip: describes a mid-window usage credit (Anthropic lowering utilization without resetting the window). %1$ld is the utilization percent before the credit, %2$ld is the percent after. No count/plural involved.",
   "graph.now": "Graph 'now' marker label and hover tooltip current-time label",
-  "graph.placeholder": "Graph placeholder text when no reset data is available",
   "graph.stats.blocked": "Graph stats: usage at 100%%, blocked. %1$@ is a localized absolute time when the window resets.",
   "graph.stats.blocked_date": "Graph stats: usage at 100%%, blocked, reset on a different day. %1$@ is a localized date+time string (Apple automatically inserts 'at' between date and time, so do NOT add 'at' before %1$@ in translations).",
   "graph.stats.collecting": "Graph stats: not enough data for rate calculation. No format args.",
@@ -85,6 +85,13 @@
   "prefs.button.save": "Save button in Preferences window",
   "prefs.launch_at_login": "Launch at login checkbox label",
   "prefs.reset_sound": "Checkbox label for playing a sound when a critical usage limit resets",
+  "prefs.retention.label": "Preferences window label for the history retention field; carries the unit in parentheses so no plural form is needed next to the numeric stepper",
+  "prefs.retention.confirm.title": "Alert title shown before a retention decrease deletes archived history",
+  "prefs.retention.confirm.years_phrase": "Pluralized \"N year(s)\" phrase substituted into prefs.retention.confirm.message's %1$@. May be a plural object; %1$ld is the new retention in years.",
+  "prefs.retention.confirm.windows_phrase": "Pluralized \"N archived usage window(s)\" phrase substituted into prefs.retention.confirm.message's %2$@. May be a plural object; %1$ld is the count of archived windows that would be deleted.",
+  "prefs.retention.confirm.message": "Alert body template: %1$@ is the localized/pluralized years phrase (prefs.retention.confirm.years_phrase), %2$@ is the localized/pluralized windows phrase (prefs.retention.confirm.windows_phrase)",
+  "prefs.retention.confirm.delete_button": "Confirmation alert destructive button — proceeds with deleting archived history",
+  "prefs.retention.confirm.cancel_button": "Confirmation alert button — cancels the retention change, deletes nothing",
   "prefs.window.title": "Preferences window title bar",
   "setup.button.skip": "Skip button in setup window",
   "setup.button.start": "Primary action button in setup window",
@@ -96,5 +103,7 @@
   "status.operational": "Service component status: fully operational",
   "status.partial_outage": "Service component status: partial outage",
   "status.unknown": "Service component status: unknown",
-  "window.scope.all": "Label for all-models scope, shown when same-duration model-specific window exists"
+  "window.scope.all": "Label for all-models scope, shown when same-duration model-specific window exists",
+  "menu.history.saveFailing": "Dropdown menu status line shown when UsageHistory.save() is currently failing (e.g. disk full, read-only volume). %@ is a short formatted time-of-day (e.g. 14:32) of when it started failing.",
+  "menu.history.quarantinedCount": "Dropdown menu status line: count of quarantined (corrupt/unreadable) history files preserved on disk rather than lost. Plural object; %1$ld is the count."
 }

@@ -50,8 +50,8 @@
   "error.rate_limited": "Обмеження частоти — забагато запитів",
   "error.unauthorized": "Сесія закінчилась — оновіть cookie в Параметрах",
   "error.unexpected_status": "Неочікуваний HTTP %1$ld",
+  "graph.credit.description": "кредит використання: %1$ld%% → %2$ld%%",
   "graph.now": "зараз",
-  "graph.placeholder": "Немає даних про скидання",
   "graph.stats.blocked": "заблоковано · скидання о %1$@",
   "graph.stats.blocked_date": "заблоковано · скидання %1$@",
   "graph.stats.collecting": "збір даних…",
@@ -85,6 +85,23 @@
   "prefs.button.save": "Зберегти",
   "prefs.launch_at_login": "Запускати при вході",
   "prefs.reset_sound": "Відтворити звук при скиданні критичного ліміту",
+  "prefs.retention.label": "Зберігати історію використання (років):",
+  "prefs.retention.confirm.title": "Видалити архівну історію?",
+  "prefs.retention.confirm.years_phrase": {
+    "one": "%1$ld рік",
+    "few": "%1$ld роки",
+    "many": "%1$ld років",
+    "other": "%1$ld року"
+  },
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld архівне вікно",
+    "few": "%1$ld архівних вікна",
+    "many": "%1$ld архівних вікон",
+    "other": "%1$ld архівного вікна"
+  },
+  "prefs.retention.confirm.message": "Скорочення терміну зберігання до %1$@ призведе до остаточного видалення %2$@. Цю дію не можна скасувати.",
+  "prefs.retention.confirm.delete_button": "Видалити",
+  "prefs.retention.confirm.cancel_button": "Скасувати",
   "prefs.window.title": "Claude Monitor – Параметри",
   "setup.button.skip": "Пропустити",
   "setup.button.start": "Почати",
@@ -96,5 +113,12 @@
   "status.operational": "Працює",
   "status.partial_outage": "Частковий перебій",
   "status.unknown": "Невідомо",
-  "window.scope.all": "усі"
+  "window.scope.all": "усі",
+  "menu.history.saveFailing": "Збереження історії не вдається (з %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld файл історії на карантині",
+    "few": "%1$ld файли історії на карантині",
+    "many": "%1$ld файлів історії на карантині",
+    "other": "%1$ld файлу історії на карантині"
+  }
 }

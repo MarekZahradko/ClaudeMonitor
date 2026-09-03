@@ -50,8 +50,8 @@
   "error.rate_limited": "Kadar dihadkan – terlalu banyak permintaan",
   "error.unauthorized": "Sesi tamat tempoh – kemas kini kuki dalam Keutamaan",
   "error.unexpected_status": "HTTP %1$ld tidak dijangka",
+  "graph.credit.description": "kredit penggunaan: %1$ld%% → %2$ld%%",
   "graph.now": "sekarang",
-  "graph.placeholder": "Tiada data penetapan semula",
   "graph.stats.blocked": "disekat · tetap semula pada %1$@",
   "graph.stats.blocked_date": "disekat · tetap semula %1$@",
   "graph.stats.collecting": "mengumpul data…",
@@ -85,6 +85,13 @@
   "prefs.button.save": "Simpan",
   "prefs.launch_at_login": "Lancar semasa log masuk",
   "prefs.reset_sound": "Main bunyi apabila had kritikal ditetapkan semula",
+  "prefs.retention.label": "Simpan sejarah penggunaan (tahun):",
+  "prefs.retention.confirm.title": "Padam Sejarah Terarkib?",
+  "prefs.retention.confirm.years_phrase": "%1$ld tahun",
+  "prefs.retention.confirm.windows_phrase": "%1$ld tetingkap penggunaan terarkib",
+  "prefs.retention.confirm.message": "Mengurangkan tempoh penyimpanan kepada %1$@ akan memadam %2$@ secara kekal. Tindakan ini tidak boleh dibuat asal.",
+  "prefs.retention.confirm.delete_button": "Padam",
+  "prefs.retention.confirm.cancel_button": "Batal",
   "prefs.window.title": "Claude Monitor – Keutamaan",
   "setup.button.skip": "Langkau",
   "setup.button.start": "Mulakan",
@@ -96,5 +103,9 @@
   "status.operational": "Beroperasi",
   "status.partial_outage": "Gangguan Separa",
   "status.unknown": "Tidak Diketahui",
-  "window.scope.all": "semua"
+  "window.scope.all": "semua",
+  "menu.history.saveFailing": "Penyimpanan sejarah gagal (sejak %@)",
+  "menu.history.quarantinedCount": {
+    "other": "%1$ld fail sejarah yang dikuarantin"
+  }
 }

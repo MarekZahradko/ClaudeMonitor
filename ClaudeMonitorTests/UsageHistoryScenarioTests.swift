@@ -34,7 +34,6 @@ import Testing
             #expect(segA.kind == segB.kind)
         }
         #expect(abs(analysisAll.projectedAtReset - analysisSonnet.projectedAtReset) < 1.0)
-        await fixture.cleanup()
     }
 
     @Test @MainActor func restartAfterResetProducesCleanGraph() async throws {
@@ -56,10 +55,12 @@ import Testing
         #expect(history.samples(for: makeEntry(key: "five_hour", utilization: 50, resetsAt: oldResetsAt)).count > 0)
 
         let newResetsAt = now.addingTimeInterval(duration)
+        // Old window's resets_at (oldResetsAt = now+3600) must have actually arrived for
+        // this to be a genuine boundary — pass an explicit `at:` just past it.
         await history.detectAndHandleReset(
             entry: makeEntry(key: "five_hour", utilization: 50, resetsAt: newResetsAt),
             newResetsAt: newResetsAt,
-            previousResetsAt: oldResetsAt
+            at: oldResetsAt.addingTimeInterval(10)
         )
 
         let newUtils = [2, 3, 5]
@@ -87,7 +88,6 @@ import Testing
         for sample in samples {
             #expect(sample.timestamp >= windowStart)
         }
-        await fixture.cleanup()
     }
 
     @Test @MainActor func multipleResetCyclesKeepDataClean() async throws {
@@ -111,10 +111,11 @@ import Testing
 
             let nextResetsAt = currentResetsAt.addingTimeInterval(duration * 0.6)
             let resetEntry = makeEntry(key: "five_hour", utilization: baseUtil + 8, resetsAt: nextResetsAt)
+            // currentResetsAt must have actually arrived for this to be a genuine boundary.
             await history.detectAndHandleReset(
                 entry: resetEntry,
                 newResetsAt: nextResetsAt,
-                previousResetsAt: currentResetsAt
+                at: currentResetsAt.addingTimeInterval(10)
             )
             currentResetsAt = nextResetsAt
         }
@@ -134,7 +135,6 @@ import Testing
             #expect(sample.utilization <= 20)
         }
         #expect(samples.count <= 3)
-        await fixture.cleanup()
     }
 
     @Test @MainActor func segmentConsistencyAcrossSimilarWindows() {
@@ -205,7 +205,6 @@ import Testing
             let gapDuration = gapSeg.samples[1].timestamp.timeIntervalSince(gapSeg.samples[0].timestamp)
             #expect(gapDuration > 600)
         }
-        await fixture.cleanup()
     }
 
     @Test @MainActor func identicalInputsProduceIdenticalAnalysis() {
@@ -248,6 +247,5 @@ import Testing
         #expect(samples.count == 2)
         #expect(samples[0].utilization == 18)
         #expect(samples[1].utilization == 15)
-        await fixture.cleanup()
     }
 }

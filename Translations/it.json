@@ -50,8 +50,8 @@
   "error.rate_limited": "Limite raggiunto – troppe richieste",
   "error.unauthorized": "Sessione scaduta – aggiorna il cookie nelle Preferenze",
   "error.unexpected_status": "HTTP %1$ld imprevisto",
+  "graph.credit.description": "credito di utilizzo: %1$ld%% → %2$ld%%",
   "graph.now": "ora",
-  "graph.placeholder": "Nessun dato di ripristino",
   "graph.stats.blocked": "bloccato · si azzera alle %1$@",
   "graph.stats.blocked_date": "bloccato · si azzera %1$@",
   "graph.stats.collecting": "raccolta dati…",
@@ -85,6 +85,19 @@
   "prefs.button.save": "Salva",
   "prefs.launch_at_login": "Avvia al login",
   "prefs.reset_sound": "Riproduci un suono quando il limite critico si reimposta",
+  "prefs.retention.label": "Conserva la cronologia di utilizzo (anni):",
+  "prefs.retention.confirm.title": "Eliminare la cronologia archiviata?",
+  "prefs.retention.confirm.years_phrase": {
+    "one": "%1$ld anno",
+    "other": "%1$ld anni"
+  },
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld finestra di utilizzo archiviata",
+    "other": "%1$ld finestre di utilizzo archiviate"
+  },
+  "prefs.retention.confirm.message": "Riducendo la conservazione a %1$@ verranno eliminate definitivamente %2$@. Questa azione non può essere annullata.",
+  "prefs.retention.confirm.delete_button": "Elimina",
+  "prefs.retention.confirm.cancel_button": "Annulla",
   "prefs.window.title": "Claude Monitor – Preferenze",
   "setup.button.skip": "Ignora",
   "setup.button.start": "Inizia",
@@ -96,5 +109,10 @@
   "status.operational": "Operativo",
   "status.partial_outage": "Interruzione parziale",
   "status.unknown": "Sconosciuto",
-  "window.scope.all": "tutti"
+  "window.scope.all": "tutti",
+  "menu.history.saveFailing": "Il salvataggio della cronologia sta fallendo (da %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld file della cronologia in quarantena",
+    "other": "%1$ld file della cronologia in quarantena"
+  }
 }

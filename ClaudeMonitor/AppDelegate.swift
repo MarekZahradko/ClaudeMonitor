@@ -23,7 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         setupMainMenu()
         setupEditingShortcuts()
-        UsageHistory.migrateAndDeleteLegacyData()
+        UsageHistory.migrateAndDeleteLegacyData(baseDirectory: UsageHistory.productionBaseDirectory)
         menuBarController = MenuBarController()
     }
 

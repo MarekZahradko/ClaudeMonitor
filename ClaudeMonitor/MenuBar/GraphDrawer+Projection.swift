@@ -26,8 +26,9 @@ extension GraphDrawer {
         let endDate: Date
         let endUtil: Double
         if let ttl = analysis.timeToLimit, ttl <= timeRemaining {
-            crossingDate = now.addingTimeInterval(ttl)
-            endDate = crossingDate!
+            let crossing = now.addingTimeInterval(ttl)
+            crossingDate = crossing
+            endDate = crossing
             endUtil = 100
         } else {
             crossingDate = nil

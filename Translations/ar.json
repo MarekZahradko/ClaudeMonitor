@@ -50,8 +50,8 @@
   "error.rate_limited": "تقييد المعدل – طلبات كثيرة جدًا",
   "error.unauthorized": "انتهت الجلسة – حدّث Cookie في التفضيلات",
   "error.unexpected_status": "رمز HTTP غير متوقع %1$ld",
+  "graph.credit.description": "رصيد استخدام: %1$ld%% → %2$ld%%",
   "graph.now": "الآن",
-  "graph.placeholder": "لا توجد بيانات إعادة تعيين",
   "graph.stats.blocked": "محظور · يُعاد التعيين في %1$@",
   "graph.stats.blocked_date": "محظور · يُعاد التعيين %1$@",
   "graph.stats.collecting": "جمع البيانات…",
@@ -85,6 +85,27 @@
   "prefs.button.save": "حفظ",
   "prefs.launch_at_login": "التشغيل عند تسجيل الدخول",
   "prefs.reset_sound": "تشغيل صوت عند إعادة تعيين الحد الحرج",
+  "prefs.retention.label": "احتفظ بسجل الاستخدام (بالسنوات):",
+  "prefs.retention.confirm.title": "هل تريد حذف السجل المؤرشف؟",
+  "prefs.retention.confirm.years_phrase": {
+    "zero": "%1$ld سنة",
+    "one": "%1$ld سنة",
+    "two": "%1$ld سنتان",
+    "few": "%1$ld سنوات",
+    "many": "%1$ld سنة",
+    "other": "%1$ld سنة"
+  },
+  "prefs.retention.confirm.windows_phrase": {
+    "zero": "%1$ld نافذة استخدام مؤرشفة",
+    "one": "%1$ld نافذة استخدام مؤرشفة",
+    "two": "%1$ld نافذتا استخدام مؤرشفتان",
+    "few": "%1$ld نوافذ استخدام مؤرشفة",
+    "many": "%1$ld نافذة استخدام مؤرشفة",
+    "other": "%1$ld نافذة استخدام مؤرشفة"
+  },
+  "prefs.retention.confirm.message": "تقليل مدة الاحتفاظ إلى %1$@ سيؤدي إلى حذف %2$@ بشكل نهائي. لا يمكن التراجع عن هذا الإجراء.",
+  "prefs.retention.confirm.delete_button": "حذف",
+  "prefs.retention.confirm.cancel_button": "إلغاء",
   "prefs.window.title": "Claude Monitor – التفضيلات",
   "setup.button.skip": "تخطي",
   "setup.button.start": "ابدأ الآن",
@@ -96,5 +117,14 @@
   "status.operational": "يعمل",
   "status.partial_outage": "انقطاع جزئي",
   "status.unknown": "غير معروف",
-  "window.scope.all": "الكل"
+  "window.scope.all": "الكل",
+  "menu.history.saveFailing": "فشل حفظ السجل (منذ %@)",
+  "menu.history.quarantinedCount": {
+    "zero": "لا توجد ملفات سجل معزولة (%1$ld)",
+    "one": "ملف سجل معزول واحد (%1$ld)",
+    "two": "ملفا سجل معزولان (%1$ld)",
+    "few": "%1$ld ملفات سجل معزولة",
+    "many": "%1$ld ملف سجل معزول",
+    "other": "%1$ld ملف سجل معزول"
+  }
 }

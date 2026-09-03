@@ -50,8 +50,8 @@
   "error.rate_limited": "レート制限 – リクエストが多すぎます",
   "error.unauthorized": "セッション期限切れ – 環境設定で Cookie を更新してください",
   "error.unexpected_status": "予期しない HTTP %1$ld",
+  "graph.credit.description": "使用量クレジット: %1$ld%% → %2$ld%%",
   "graph.now": "現在",
-  "graph.placeholder": "リセットデータなし",
   "graph.stats.blocked": "ブロック中 · %1$@にリセット",
   "graph.stats.blocked_date": "ブロック中 · %1$@にリセット",
   "graph.stats.collecting": "データ収集中…",
@@ -85,6 +85,13 @@
   "prefs.button.save": "保存",
   "prefs.launch_at_login": "ログイン時に起動",
   "prefs.reset_sound": "クリティカル制限リセット時にサウンドを再生",
+  "prefs.retention.label": "使用履歴の保存期間（年）:",
+  "prefs.retention.confirm.title": "アーカイブされた履歴を削除しますか?",
+  "prefs.retention.confirm.years_phrase": "%1$ld年",
+  "prefs.retention.confirm.windows_phrase": "アーカイブ済みの使用ウィンドウ%1$ld件",
+  "prefs.retention.confirm.message": "保存期間を%1$@に短縮すると、%2$@が完全に削除されます。この操作は元に戻せません。",
+  "prefs.retention.confirm.delete_button": "削除",
+  "prefs.retention.confirm.cancel_button": "キャンセル",
   "prefs.window.title": "Claude Monitor – 環境設定",
   "setup.button.skip": "スキップ",
   "setup.button.start": "はじめる",
@@ -96,5 +103,9 @@
   "status.operational": "正常稼働",
   "status.partial_outage": "部分的な障害",
   "status.unknown": "不明",
-  "window.scope.all": "全体"
+  "window.scope.all": "全体",
+  "menu.history.saveFailing": "履歴の保存に失敗しています（%@から）",
+  "menu.history.quarantinedCount": {
+    "other": "隔離された履歴ファイル %1$ld 件"
+  }
 }

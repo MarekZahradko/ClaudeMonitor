@@ -50,8 +50,8 @@
   "error.rate_limited": "ถูกจำกัดอัตรา – คำขอมากเกินไป",
   "error.unauthorized": "เซสชันหมดอายุ – อัปเดต Cookie ในการตั้งค่า",
   "error.unexpected_status": "HTTP %1$ld ที่ไม่คาดคิด",
+  "graph.credit.description": "เครดิตการใช้งาน: %1$ld%% → %2$ld%%",
   "graph.now": "ตอนนี้",
-  "graph.placeholder": "ไม่มีข้อมูลรีเซ็ต",
   "graph.stats.blocked": "ถูกบล็อก · รีเซ็ตเวลา %1$@",
   "graph.stats.blocked_date": "ถูกบล็อก · รีเซ็ต %1$@",
   "graph.stats.collecting": "กำลังเก็บข้อมูล…",
@@ -85,6 +85,13 @@
   "prefs.button.save": "บันทึก",
   "prefs.launch_at_login": "เปิดเมื่อเข้าสู่ระบบ",
   "prefs.reset_sound": "เล่นเสียงเมื่อขีดจำกัดวิกฤตถูกรีเซ็ต",
+  "prefs.retention.label": "เก็บประวัติการใช้งาน (ปี):",
+  "prefs.retention.confirm.title": "ลบประวัติที่เก็บถาวรหรือไม่?",
+  "prefs.retention.confirm.years_phrase": "%1$ld ปี",
+  "prefs.retention.confirm.windows_phrase": "หน้าต่างการใช้งานที่เก็บถาวร %1$ld รายการ",
+  "prefs.retention.confirm.message": "การลดระยะเวลาการเก็บรักษาเหลือ %1$@ จะลบ %2$@ อย่างถาวร การกระทำนี้ไม่สามารถยกเลิกได้",
+  "prefs.retention.confirm.delete_button": "ลบ",
+  "prefs.retention.confirm.cancel_button": "ยกเลิก",
   "prefs.window.title": "Claude Monitor – การตั้งค่า",
   "setup.button.skip": "ข้าม",
   "setup.button.start": "เริ่มต้นใช้งาน",
@@ -96,5 +103,9 @@
   "status.operational": "ทำงานปกติ",
   "status.partial_outage": "ขัดข้องบางส่วน",
   "status.unknown": "ไม่ทราบ",
-  "window.scope.all": "ทั้งหมด"
+  "window.scope.all": "ทั้งหมด",
+  "menu.history.saveFailing": "การบันทึกประวัติล้มเหลว (ตั้งแต่ %@)",
+  "menu.history.quarantinedCount": {
+    "other": "ไฟล์ประวัติที่ถูกกักกัน %1$ld ไฟล์"
+  }
 }

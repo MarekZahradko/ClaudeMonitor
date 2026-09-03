@@ -50,8 +50,8 @@
   "error.rate_limited": "请求过于频繁，已被限速",
   "error.unauthorized": "会话已过期 – 请在偏好设置中更新 Cookie",
   "error.unexpected_status": "意外的 HTTP %1$ld",
+  "graph.credit.description": "用量抵扣：%1$ld%% → %2$ld%%",
   "graph.now": "现在",
-  "graph.placeholder": "无重置数据",
   "graph.stats.blocked": "已锁定 · 于%1$@重置",
   "graph.stats.blocked_date": "已锁定 · %1$@重置",
   "graph.stats.collecting": "正在采集数据…",
@@ -85,6 +85,13 @@
   "prefs.button.save": "存储",
   "prefs.launch_at_login": "登录时启动",
   "prefs.reset_sound": "严重限制重置时播放声音",
+  "prefs.retention.label": "保留使用历史记录（年）:",
+  "prefs.retention.confirm.title": "删除已归档的历史记录?",
+  "prefs.retention.confirm.years_phrase": "%1$ld 年",
+  "prefs.retention.confirm.windows_phrase": "%1$ld 个已归档的使用窗口",
+  "prefs.retention.confirm.message": "将保留期限缩短为 %1$@ 将永久删除 %2$@。此操作无法撤销。",
+  "prefs.retention.confirm.delete_button": "删除",
+  "prefs.retention.confirm.cancel_button": "取消",
   "prefs.window.title": "Claude Monitor – 偏好设置",
   "setup.button.skip": "跳过",
   "setup.button.start": "开始使用",
@@ -96,5 +103,9 @@
   "status.operational": "正常运行",
   "status.partial_outage": "部分故障",
   "status.unknown": "未知",
-  "window.scope.all": "全部"
+  "window.scope.all": "全部",
+  "menu.history.saveFailing": "历史记录保存失败（自 %@ 起）",
+  "menu.history.quarantinedCount": {
+    "other": "%1$ld 个已隔离的历史记录文件"
+  }
 }

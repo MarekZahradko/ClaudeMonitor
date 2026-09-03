@@ -50,8 +50,8 @@
   "error.rate_limited": "Ograničenje zahtjeva – previše zahtjeva",
   "error.unauthorized": "Sesija je istekla – ažurirajte kolačić u Postavkama",
   "error.unexpected_status": "Neočekivani HTTP %1$ld",
+  "graph.credit.description": "kredit korištenja: %1$ld%% → %2$ld%%",
   "graph.now": "sada",
-  "graph.placeholder": "Nema podataka o resetu",
   "graph.stats.blocked": "blokirano · resetira se u %1$@",
   "graph.stats.blocked_date": "blokirano · resetira se %1$@",
   "graph.stats.collecting": "prikupljanje podataka…",
@@ -85,6 +85,21 @@
   "prefs.button.save": "Spremi",
   "prefs.launch_at_login": "Pokreni pri prijavi",
   "prefs.reset_sound": "Reproduciraj zvuk kad se kritično ograničenje resetira",
+  "prefs.retention.label": "Čuvaj povijest korištenja (godine):",
+  "prefs.retention.confirm.title": "Izbrisati arhiviranu povijest?",
+  "prefs.retention.confirm.years_phrase": {
+    "one": "%1$ld godina",
+    "few": "%1$ld godine",
+    "other": "%1$ld godina"
+  },
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld arhivirani prozor",
+    "few": "%1$ld arhivirana prozora",
+    "other": "%1$ld arhiviranih prozora"
+  },
+  "prefs.retention.confirm.message": "Smanjenjem zadržavanja na %1$@ trajno će se izbrisati %2$@. Ovo se ne može poništiti.",
+  "prefs.retention.confirm.delete_button": "Izbriši",
+  "prefs.retention.confirm.cancel_button": "Odustani",
   "prefs.window.title": "Claude Monitor – Postavke",
   "setup.button.skip": "Preskoči",
   "setup.button.start": "Započnite",
@@ -96,5 +111,11 @@
   "status.operational": "Operativno",
   "status.partial_outage": "Djelomični ispad",
   "status.unknown": "Nepoznato",
-  "window.scope.all": "sve"
+  "window.scope.all": "sve",
+  "menu.history.saveFailing": "Spremanje povijesti ne uspijeva (od %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld karantenirana datoteka povijesti",
+    "few": "%1$ld karantenirane datoteke povijesti",
+    "other": "%1$ld karanteniranih datoteka povijesti"
+  }
 }

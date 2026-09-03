@@ -10,6 +10,11 @@ enum DemoData {
         let hasRecentFailure: Bool
         let lastFailedAt: Date?
         let pollInterval: TimeInterval
+        /// Whether this frame depicts a just-happened critical-window reset, driving the
+        /// demo's reset sound/animation. Explicit per scenario — never inferred from
+        /// comparing utilization/resets_at against the previous frame (a utilization drop
+        /// alone is never a valid reset signal; see UsageHistory.detectAndHandleReset).
+        let isCriticalReset: Bool
     }
 
     private static let allOperationalComponents = [
@@ -66,7 +71,7 @@ enum DemoData {
                 ),
             ]
         )
-        return DemoFrame(usage: usage, status: status, samples: samples, isOnline: true, isAnyServiceStale: false, hasRecentFailure: false, lastFailedAt: nil, pollInterval: 80)
+        return DemoFrame(usage: usage, status: status, samples: samples, isOnline: true, isAnyServiceStale: false, hasRecentFailure: false, lastFailedAt: nil, pollInterval: 80, isCriticalReset: false)
     }
 
     private static func scenario2() -> DemoFrame {
@@ -86,12 +91,12 @@ enum DemoData {
                 ),
             ]
         )
-        return DemoFrame(usage: usage, status: status, samples: samples, isOnline: true, isAnyServiceStale: false, hasRecentFailure: false, lastFailedAt: nil, pollInterval: 60)
+        return DemoFrame(usage: usage, status: status, samples: samples, isOnline: true, isAnyServiceStale: false, hasRecentFailure: false, lastFailedAt: nil, pollInterval: 60, isCriticalReset: false)
     }
 
     private static func scenario3() -> DemoFrame {
         let (usage, samples) = makeS3UsageAndSamples()
-        return DemoFrame(usage: usage, status: allSystemsOperationalStatus, samples: samples, isOnline: true, isAnyServiceStale: false, hasRecentFailure: false, lastFailedAt: nil, pollInterval: 24)
+        return DemoFrame(usage: usage, status: allSystemsOperationalStatus, samples: samples, isOnline: true, isAnyServiceStale: false, hasRecentFailure: false, lastFailedAt: nil, pollInterval: 24, isCriticalReset: false)
     }
 
     private static func scenario4() -> DemoFrame {
@@ -107,7 +112,7 @@ enum DemoData {
             "seven_day": makeSamples(sampleData["s4_7d"] ?? [], resetsAt: resetsAt7d),
             "seven_day_sonnet": makeSamples(sampleData["s4_7d_sonnet"] ?? [], resetsAt: resetsAt7d),
         ]
-        return DemoFrame(usage: usage, status: allSystemsOperationalStatus, samples: samples, isOnline: true, isAnyServiceStale: false, hasRecentFailure: false, lastFailedAt: nil, pollInterval: 300)
+        return DemoFrame(usage: usage, status: allSystemsOperationalStatus, samples: samples, isOnline: true, isAnyServiceStale: false, hasRecentFailure: false, lastFailedAt: nil, pollInterval: 300, isCriticalReset: false)
     }
 
     private static let allSystemsOperationalStatus = StatusSummary(
@@ -161,16 +166,16 @@ enum DemoData {
 
     private static func scenario5() -> DemoFrame {
         let (usage, samples) = makeS2UsageAndSamples()
-        return DemoFrame(usage: usage, status: allSystemsOperationalStatus, samples: samples, isOnline: true, isAnyServiceStale: false, hasRecentFailure: true, lastFailedAt: Date().addingTimeInterval(-90), pollInterval: 53)
+        return DemoFrame(usage: usage, status: allSystemsOperationalStatus, samples: samples, isOnline: true, isAnyServiceStale: false, hasRecentFailure: true, lastFailedAt: Date().addingTimeInterval(-90), pollInterval: 53, isCriticalReset: false)
     }
 
     private static func scenario6() -> DemoFrame {
         let (usage, samples) = makeS3UsageAndSamples()
-        return DemoFrame(usage: usage, status: allSystemsOperationalStatus, samples: samples, isOnline: false, isAnyServiceStale: true, hasRecentFailure: false, lastFailedAt: Date().addingTimeInterval(-180), pollInterval: 40)
+        return DemoFrame(usage: usage, status: allSystemsOperationalStatus, samples: samples, isOnline: false, isAnyServiceStale: true, hasRecentFailure: false, lastFailedAt: Date().addingTimeInterval(-180), pollInterval: 40, isCriticalReset: false)
     }
 
     private static func scenario7() -> DemoFrame {
         let (usage, samples) = makeS1UsageAndSamples()
-        return DemoFrame(usage: usage, status: allSystemsOperationalStatus, samples: samples, isOnline: true, isAnyServiceStale: true, hasRecentFailure: false, lastFailedAt: Date().addingTimeInterval(-240), pollInterval: 120)
+        return DemoFrame(usage: usage, status: allSystemsOperationalStatus, samples: samples, isOnline: true, isAnyServiceStale: true, hasRecentFailure: false, lastFailedAt: Date().addingTimeInterval(-240), pollInterval: 120, isCriticalReset: false)
     }
 }

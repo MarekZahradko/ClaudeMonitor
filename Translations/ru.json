@@ -50,8 +50,8 @@
   "error.rate_limited": "Ограничение частоты запросов — слишком много запросов",
   "error.unauthorized": "Сессия истекла — обновите Cookie в Настройках",
   "error.unexpected_status": "Неожиданный HTTP %1$ld",
+  "graph.credit.description": "кредит использования: %1$ld%% → %2$ld%%",
   "graph.now": "сейчас",
-  "graph.placeholder": "Нет данных о сбросе",
   "graph.stats.blocked": "заблокировано · сброс в %1$@",
   "graph.stats.blocked_date": "заблокировано · сброс %1$@",
   "graph.stats.collecting": "сбор данных…",
@@ -85,6 +85,23 @@
   "prefs.button.save": "Сохранить",
   "prefs.launch_at_login": "Запускать при входе в систему",
   "prefs.reset_sound": "Воспроизвести звук при сбросе критического лимита",
+  "prefs.retention.label": "Хранить историю использования (лет):",
+  "prefs.retention.confirm.title": "Удалить архивную историю?",
+  "prefs.retention.confirm.years_phrase": {
+    "one": "%1$ld год",
+    "few": "%1$ld года",
+    "many": "%1$ld лет",
+    "other": "%1$ld года"
+  },
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld архивное окно",
+    "few": "%1$ld архивных окна",
+    "many": "%1$ld архивных окон",
+    "other": "%1$ld архивного окна"
+  },
+  "prefs.retention.confirm.message": "Уменьшение срока хранения до %1$@ приведет к безвозвратному удалению %2$@. Это действие нельзя отменить.",
+  "prefs.retention.confirm.delete_button": "Удалить",
+  "prefs.retention.confirm.cancel_button": "Отмена",
   "prefs.window.title": "Claude Monitor – Настройки",
   "setup.button.skip": "Пропустить",
   "setup.button.start": "Начать",
@@ -96,5 +113,12 @@
   "status.operational": "Работает",
   "status.partial_outage": "Частичный сбой",
   "status.unknown": "Неизвестно",
-  "window.scope.all": "все"
+  "window.scope.all": "все",
+  "menu.history.saveFailing": "Сохранение истории не выполняется (с %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld файл истории на карантине",
+    "few": "%1$ld файла истории на карантине",
+    "many": "%1$ld файлов истории на карантине",
+    "other": "%1$ld файла истории на карантине"
+  }
 }

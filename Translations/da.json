@@ -50,8 +50,8 @@
   "error.rate_limited": "Hastighedsbegrænset – for mange forespørgsler",
   "error.unauthorized": "Session udløbet – opdater cookie i Indstillinger",
   "error.unexpected_status": "Uventet HTTP %1$ld",
+  "graph.credit.description": "forbrugskredit: %1$ld%% → %2$ld%%",
   "graph.now": "nu",
-  "graph.placeholder": "Ingen nulstillingsdata",
   "graph.stats.blocked": "blokeret · nulstilles kl. %1$@",
   "graph.stats.blocked_date": "blokeret · nulstilles %1$@",
   "graph.stats.collecting": "indsamler data…",
@@ -85,6 +85,16 @@
   "prefs.button.save": "Gem",
   "prefs.launch_at_login": "Start ved login",
   "prefs.reset_sound": "Afspil lyd når kritisk grænse nulstilles",
+  "prefs.retention.label": "Behold brugshistorik (år):",
+  "prefs.retention.confirm.title": "Slet arkiveret historik?",
+  "prefs.retention.confirm.years_phrase": "%1$ld år",
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld arkiveret brugsvindue",
+    "other": "%1$ld arkiverede brugsvinduer"
+  },
+  "prefs.retention.confirm.message": "Hvis du reducerer opbevaringen til %1$@, slettes %2$@ permanent. Dette kan ikke fortrydes.",
+  "prefs.retention.confirm.delete_button": "Slet",
+  "prefs.retention.confirm.cancel_button": "Annuller",
   "prefs.window.title": "Claude Monitor – Indstillinger",
   "setup.button.skip": "Spring over",
   "setup.button.start": "Kom i gang",
@@ -96,5 +106,10 @@
   "status.operational": "I drift",
   "status.partial_outage": "Delvist nedbrud",
   "status.unknown": "Ukendt",
-  "window.scope.all": "alle"
+  "window.scope.all": "alle",
+  "menu.history.saveFailing": "Gemning af historik fejler (siden %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld karantænesat historikfil",
+    "other": "%1$ld karantænesatte historikfiler"
+  }
 }

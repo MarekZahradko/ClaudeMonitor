@@ -50,8 +50,8 @@
   "error.rate_limited": "Hız sınırı — çok fazla istek",
   "error.unauthorized": "Oturum süresi doldu — Cookie'yi Tercihler'de güncelleyin",
   "error.unexpected_status": "Beklenmeyen HTTP %1$ld",
+  "graph.credit.description": "kullanım kredisi: %1$ld%% → %2$ld%%",
   "graph.now": "şimdi",
-  "graph.placeholder": "Sıfırlama verisi yok",
   "graph.stats.blocked": "engellendi · sıfırlanma: %1$@",
   "graph.stats.blocked_date": "engellendi · sıfırlanma: %1$@",
   "graph.stats.collecting": "veri toplanıyor…",
@@ -85,6 +85,13 @@
   "prefs.button.save": "Kaydet",
   "prefs.launch_at_login": "Oturum açılışında başlat",
   "prefs.reset_sound": "Kritik sınır sıfırlandığında ses çal",
+  "prefs.retention.label": "Kullanım geçmişini sakla (yıl):",
+  "prefs.retention.confirm.title": "Arşivlenmiş Geçmiş Silinsin mi?",
+  "prefs.retention.confirm.years_phrase": "%1$ld yıl",
+  "prefs.retention.confirm.windows_phrase": "%1$ld arşivlenmiş kullanım penceresini",
+  "prefs.retention.confirm.message": "Saklama süresini %1$@ düşürmek, %2$@ kalıcı olarak silecektir. Bu işlem geri alınamaz.",
+  "prefs.retention.confirm.delete_button": "Sil",
+  "prefs.retention.confirm.cancel_button": "İptal",
   "prefs.window.title": "Claude Monitor – Tercihler",
   "setup.button.skip": "Atla",
   "setup.button.start": "Başlayın",
@@ -96,5 +103,9 @@
   "status.operational": "Çalışıyor",
   "status.partial_outage": "Kısmi Kesinti",
   "status.unknown": "Bilinmiyor",
-  "window.scope.all": "tümü"
+  "window.scope.all": "tümü",
+  "menu.history.saveFailing": "Geçmiş kaydetme başarısız oluyor (%@ itibarıyla)",
+  "menu.history.quarantinedCount": {
+    "other": "%1$ld karantinaya alınmış geçmiş dosyası"
+  }
 }

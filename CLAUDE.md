@@ -33,32 +33,55 @@ Xcode 26 project uses `PBXFileSystemSynchronizedRootGroup` — new `.swift` file
 ```
 ClaudeMonitor/
 ├── AppDelegate.swift                    — @main entry point, lifecycle, editing shortcuts
-├── AppState.swift                       — MonitorState, ServiceState value types
 ├── BundleModule.swift                   — Bundle.module shim for Xcode builds
-├── Constants.swift                      — all hardcoded values (URLs, intervals, keychain keys)
+├── Constants.swift                      — all hardcoded values (URLs, intervals, file naming, thresholds)
 ├── DemoData.swift                       — demo mode data for screenshots/testing
-├── JSONDecoder+ISO8601.swift            — shared ISO8601 decoder with fractional seconds
-├── StatusModels.swift                   — StatusSummary, StatusComponent, ComponentStatus, Incident, PageStatus
-├── UsageModels.swift                    — UsageResponse, UsageWindow, WindowEntry, WindowKeyParser
+├── MenuBuilder+LiveUpdate.swift         — live menu refresh while open
+├── Extensions/
+│   ├── JSONDecoder+ISO8601.swift        — shared ISO8601 decoder with fractional seconds
+│   └── NSColor+Desaturate.swift
+├── Generated/BuildInfo.swift            — GENERATED from scripts/build-config.sh (incl. the under-test env var name)
+├── Models/
+│   ├── AppState.swift                   — MonitorState, UsageSnapshot, ServiceHealth, HistoryHealth
+│   ├── StatusModels.swift               — StatusSummary, StatusComponent, ComponentStatus, Incident, PageStatus
+│   ├── UsageModels.swift                — UsageResponse, UsageWindow, WindowEntry, WindowKeyParser
+│   ├── UsageHistory.swift               — WindowInstance, UsageEvent, record(), boundary detection, partitionEvents
+│   ├── UsageHistory+Analysis.swift      — nonisolated pure analysis: segments, rate (credit-aware), projection
+│   ├── UsageHistory+Archive.swift       — archiveWindow, plateau-collapse, retention, quarantine pruning
+│   ├── UsageHistory+Persistence.swift   — save/load, legacy-deletion safety, quarantine
+│   ├── UsageHistory+Manifest.swift      — per-org manifest (persisted missing-window clock)
+│   ├── UsageHistory+LegacyArchiveMigration.swift — one-time v1 .json.lzma → current format migration
+│   └── WindowInstanceCodec.swift        — v3 binary codec, v2 + legacy v1 read paths, CRC32
 ├── Services/
-│   ├── DataCoordinator.swift            — data fetching orchestration, polling, state management
+│   ├── DataCoordinator.swift            — orchestration, polling lifecycle, history maintenance task
+│   ├── DataCoordinator+Refresh.swift    — refresh cycle, UsageFetchOutcome (fresh vs stale)
+│   ├── DataCoordinator+Polling.swift    — poll loop (weak self, scoped per iteration)
 │   ├── StatusService.swift              — fetches status.claude.com/api/v2/summary.json
 │   ├── UsageService.swift               — fetches claude.ai/api/organizations/{orgId}/usage
 │   ├── PollingScheduler.swift           — adaptive polling intervals
 │   ├── KeychainService.swift            — encrypted credential storage (UserDefaults + AES-GCM)
-│   └── ServiceError.swift               — shared error type for both services, RetryCategory
+│   ├── PathMonitor.swift                — network reachability
+│   ├── SystemIdleService.swift          — user idle time (away mode)
+│   └── ServiceError.swift               — shared error type, RetryCategory
 ├── MenuBar/
 │   ├── MenuBarController.swift          — status bar item, UI coordination
 │   ├── MenuBarController+Countdown.swift — countdown timer, critical reset animation
 │   ├── MenuBuilder.swift                — MenuActions protocol + NSMenu construction
-│   ├── MenuBuilder+Sections.swift       — menu section builders + attributed titles
-│   ├── StatusBarRenderer.swift          — status bar icon + text rendering
-│   ├── Formatting.swift                 — timeUntil(), progressBar(), displayLabel()
+│   ├── MenuBuilder+ControlItems.swift   — controls + historyHealthItem status line
+│   ├── MenuBuilder+State.swift          — state → menu reconciliation, refreshGraph
+│   ├── MenuBuilder+{Reconciliation,UsageFormatting,UsageItems,ViewLayout}.swift
+│   ├── GraphDrawer.swift                — usage graph rendering
+│   ├── GraphDrawer+Credits.swift        — credit-event markers (dashed line + step + dot)
+│   ├── GraphDrawer+{Background,Decorations,Projection,Segments}.swift
+│   ├── UsageGraphView.swift, UsageRowView.swift, ControlRowView.swift
+│   ├── StatusBarRenderer{,+IconRendering,+TitleRendering}.swift
+│   ├── Formatting.swift                 — timeUntil(), progressBar(), displayLabel(), creditDescription()
 │   └── Formatting+UsageAnalysis.swift   — usageStyle(), shouldShowInMenuBar(), blockingLimit(), detectCriticalReset()
 └── Windows/
     ├── AboutWindowController.swift      — about window
     ├── SetupWindowController.swift      — first-run setup window
-    ├── PreferencesWindowController.swift — preferences window
+    ├── PreferencesWindowController.swift — preferences (injectable `defaults:`), retention stepper
+    ├── RetentionChangeDecision.swift    — pure retention-change decision logic (AppKit-free, tested)
     ├── CredentialFormView.swift          — reusable NSView with org ID + cookie fields
     ├── CredentialGuide.swift             — NSAttributedString instructions for credentials
     └── WindowManager.swift              — activation policy + window focus management
@@ -114,6 +137,10 @@ Authentication: user provides session cookie string and organization ID via Pref
 
 **Source of truth: `Translations/*.json`** — one flat `{"key": "value"}` file per language. `_comments.json` holds developer comments for each key.
 
+A value is **either** a plain string **or** a CLDR plural object (`{"one": "…", "few": "…", "other": "…"}`), which the generator turns into xcstrings plural variations and a `.stringsdict` for CLI builds. Use the categories each language actually needs — `other` only for ja/ko/zh/vi/th/tr/hu/id/ms/hi, `one`/`few`/`other` for cs/sk/hr, `one`/`few`/`many`/`other` for ru/pl/uk, all six for ar, `one`/`other` for most Western European. Never blanket-copy English's category set: Czech "1 let" is wrong, it must be "1 rok / 2 roky / 5 let". `other` is required in every plural object (it is the universal fallback) and the generator hard-fails without it.
+
+The generator **exits non-zero** on any malformed input — a value that is neither a string nor a `{category: string}` object, an empty plural object, a missing `other`, or a present-but-broken `_comments.json`. A genuinely absent `_comments.json` is fine. Verified behaviour: `.stringsdict` resolves standalone, so plural keys correctly need no `Localizable.strings` entry.
+
 **`ClaudeMonitor/Localizable.xcstrings` is GENERATED and gitignored — never read or edit it.** It is produced by `scripts/generate-xcstrings.swift`. Xcode regenerates it automatically via a Run Script build phase. For CLI builds, `build.sh` calls the same script.
 
 ```
@@ -158,7 +185,53 @@ Unit tests in `ClaudeMonitorTests/`:
 
 All formatting, model, data coordination, rendering logic, and menu-building logic is tested. Services and window UI are not unit-tested (they hit real APIs / AppKit).
 
-**CRITICAL: Tests must NEVER contaminate production data.** `UsageHistory` uses a hardcoded production path (`~/Library/Application Support/ClaudeMonitor/usage/`). Any test that calls `save()`, `load()`, `archiveWindow()`, or other disk I/O **MUST call `clearAll()` in cleanup** and wait for the async Task to complete. Tests that write to disk and don't clean up will inject fake data into the running app — this caused a severe, hard-to-diagnose bug where synthetic test values (10+i, 20+i, 30+i) appeared as real usage data.
+### CRITICAL: tests must never contaminate production state
+
+Isolation is structural, not a matter of discipline. Two past incidents drove this: synthetic test values appearing as real usage data, and ~1966 junk directories injected into the user's real history directory.
+
+- **History**: `UsageHistory.init` requires `baseDirectory` — there is NO default pointing at production. The production path is built in exactly one place (`UsageHistory.productionBaseDirectory`) and only the app constructs it. Tests get a per-run root from `TestHistoryRoot`, under `NSTemporaryDirectory()` — never under `Application Support`. `test.sh` exports the env var named by `UNDER_TEST_ENV_VAR` in `scripts/build-config.sh`, and `UsageHistory.init` traps if that is set while `baseDirectory` is inside `Application Support`.
+- **Preferences**: tests never touch `UserDefaults.standard`. `TestPreferencesRoot` hands out per-run suite names under one prefix; `PreferencesWindowController` takes an injectable `defaults:`.
+- **Clean at START, not at end.** Each run sweeps *previous* runs' data and deliberately leaves its own behind, so a failed run's on-disk state survives for post-mortem debugging. Do NOT add `clearAll()`/`cleanup()` teardown — it deletes exactly the evidence a failing assertion needs (`#expect` does not halt, so teardown still runs after a failure).
+- **One exception to "don't clean up after yourself": permissions.** A test that deliberately chmods a directory read-only MUST restore it. An unwritable directory left behind permanently wedges the next run's sweep — this actually happened.
+- The sweep identifies a live run by PID **plus** the kernel-reported process start time (a bare PID gets recycled onto an unrelated live process and the directory then survives forever), and it restores write permissions and retries once before reporting a failure via `Issue.record`.
+
+## Usage history
+
+### Window instances — identity is stored, never derived
+
+A `WindowInstance` (`id`, `storageIdentity`, `resetsAt`, `firstObservedAt`, `samples`, `events`) owns its samples permanently. This is the core invariant: **a sample belongs to the instance it was recorded into.**
+
+Earlier code derived ownership at read time as `windowStart = resetsAt - duration` and keyed samples only by duration+model. One absent or stale `resets_at` from the API then merged samples across windows. `WindowEntry.windowStart` still exists but is **graph x-axis only** — never data ownership.
+
+**Boundary rule** — a new window requires BOTH that `resets_at` moved forward beyond `resetBoundaryTolerance` AND that `now >= stored` (the previous reset moment has actually passed). No threshold derived from window duration: the old `duration * 0.5` heuristic silently missed real boundaries (3 months of weekly windows produced one archive instead of ~12), and a bare 60s threshold would destroy live windows on ordinary server jitter. A forward move while the old reset is still in the future is drift — same instance, update the stored value.
+
+At a proven boundary, samples and events are partitioned at the old `resetsAt`: `< boundary` → archived, `>= boundary` → carried into the new instance. Without this, a post-reset sample lands in the archived window (observed live: an archive ending in a phantom crash to 0 that none of the 11 older archives had).
+
+### Credits are not resets
+
+Anthropic sometimes zeroes or reduces utilization mid-window **without** moving `resets_at` — a usage credit. Confirmed in real archives: 3 occurrences across 13 windows, e.g. weekly 55% → 0%.
+
+**A utilization drop is therefore NOT a reset signal and must never split a window.** Drops are recorded as `UsageEvent(kind: .credit)` carrying `at`, `from`, `to`, and `fromTimestamp` (the origin sample's time; `nil` in files written before it existed). `fromTimestamp` exists so straddle detection compares two stored timestamps instead of matching an event to a sample by value.
+
+Two consequences that are easy to get wrong:
+- **Server lag**: at a real reset the API often drops utilization one poll *before* it advances `resets_at`, which looks exactly like a credit. The boundary partition discards an event whose from/to straddle a **proven** boundary; on a **derived** boundary it keeps it (assigned by `at`), because discarding on a guess is the worse error.
+- **Projection**: the implied rate must be measured from the most recent credit, not the window start — otherwise the numerator resets, the denominator does not, and the app stops warning precisely when the user starts spending a fresh credit.
+
+### On-disk format (v3)
+
+`magic "CMH2" | version | metaLen | metadata JSON | sampleCount | crc32 | payload`, little-endian, written atomically. Payload: first sample absolute (uvarint epoch + uvarint utilization), then zigzag-varint deltas. Metadata JSON carries `id`, `resetsAt`, `firstObservedAt`, `events`.
+
+Chosen by measurement over a real corpus plus a 2-year synthetic one: **48% smaller and ~150× faster** than the previous lzma'd JSON, and no compression library on the read path. Because dropping compression also dropped lzma's implicit integrity check, the **CRC32 covers everything except the magic and the CRC field itself** — v2 left `version` and `sampleCount` outside it, so a single flipped bit shrinking `sampleCount` silently discarded real samples with no error. The decoder also requires the payload to be fully consumed and caps varint length.
+
+The reader accepts v3, the v2 layout, and legacy v1 (bare `[[epoch,util],…]` JSON, optionally lzma'd). The writer only emits v3. **Corrupt files are expected input, not programmer error** — decode failures return typed errors and never trap, and an undecodable file is quarantined (renamed with a timestamped `corrupt_` prefix), never deleted.
+
+**Plateau-collapse** applies to archives only, never the live instance: collapse runs of equal utilization keeping first+last of each run, and **never collapse across a gap ≥ `gapThreshold`** — the app was not running then, and the graph must show a discontinuity instead of interpolating. Real data makes this non-hypothetical: one weekly archive has 74 gaps ≥ 300s, the largest 16.5 hours. Measured reduction on real archives: 72–87%.
+
+### Retention
+
+Calendar-based (`Calendar.date(byAdding: .year, value: -n)`, never a seconds-per-year approximation), default **2 years**, user-configurable 1–99 via a stepper in Preferences. Lowering it deletes history, so it requires confirmation stating the exact count, computed and executed against **one** captured instant. Pruning runs at launch and daily — not only after a boundary, which is why the previous 77-day policy almost never actually ran. An archive whose filename cannot be parsed is never deleted; neither is a quarantined file whose name carries no timestamp.
+
+`HistoryHealth` on `MonitorState` surfaces save failures and quarantined-file counts in the menu. Write failures recover silently rather than trapping — a full disk or read-only volume is an environmental condition, not a bug — so the status line is the only signal the user gets.
 
 ## Token-Efficient Workflow
 
@@ -169,6 +242,12 @@ All formatting, model, data coordination, rendering logic, and menu-building log
 - **Sensitive/core files** — files where every word matters (prompts, configs, API contracts)
 - **Architecture decisions** — structure, abstractions, API design
 - **Code review** — mandatory for every agent change, no exceptions
+
+### Agents never execute commands
+
+**HARD RULE**: agents never run any command — not `./test.sh`, not `./install.sh`, nothing. They write code, analyze, and review only. The orchestrator runs all builds and tests and reports results back to the agent if iteration is needed. State this prohibition explicitly in every agent prompt.
+
+Consequence: agents cannot verify their own work empirically. Verification belongs to the orchestrator, together with mandatory review-agent rounds using named hypotheses (an agent's own quality claim is not evidence).
 
 ### Agent instruction rules
 

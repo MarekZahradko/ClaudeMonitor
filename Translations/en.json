@@ -50,8 +50,8 @@
   "error.rate_limited": "Rate limited – too many requests",
   "error.unauthorized": "Session expired – update cookie in Preferences",
   "error.unexpected_status": "Unexpected HTTP %1$ld",
+  "graph.credit.description": "usage credit: %1$ld%% → %2$ld%%",
   "graph.now": "now",
-  "graph.placeholder": "No reset data",
   "graph.stats.blocked": "blocked · resets at %1$@",
   "graph.stats.blocked_date": "blocked · resets %1$@",
   "graph.stats.collecting": "collecting data...",
@@ -85,6 +85,19 @@
   "prefs.button.save": "Save",
   "prefs.launch_at_login": "Launch at login",
   "prefs.reset_sound": "Play sound when critical limit resets",
+  "prefs.retention.label": "Keep usage history for (years):",
+  "prefs.retention.confirm.title": "Delete Archived History?",
+  "prefs.retention.confirm.years_phrase": {
+    "one": "%1$ld year",
+    "other": "%1$ld years"
+  },
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld archived usage window",
+    "other": "%1$ld archived usage windows"
+  },
+  "prefs.retention.confirm.message": "Reducing retention to %1$@ will permanently delete %2$@. This cannot be undone.",
+  "prefs.retention.confirm.delete_button": "Delete",
+  "prefs.retention.confirm.cancel_button": "Cancel",
   "prefs.window.title": "Claude Monitor – Preferences",
   "setup.button.skip": "Skip",
   "setup.button.start": "Get Started",
@@ -96,5 +109,10 @@
   "status.operational": "Operational",
   "status.partial_outage": "Partial Outage",
   "status.unknown": "Unknown",
-  "window.scope.all": "all"
+  "window.scope.all": "all",
+  "menu.history.saveFailing": "Saving history is failing (since %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld quarantined history file",
+    "other": "%1$ld quarantined history files"
+  }
 }

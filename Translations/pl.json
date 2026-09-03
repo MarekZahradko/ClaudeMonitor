@@ -50,8 +50,8 @@
   "error.rate_limited": "Ograniczenie częstotliwości — zbyt wiele żądań",
   "error.unauthorized": "Sesja wygasła — zaktualizuj cookie w Preferencjach",
   "error.unexpected_status": "Nieoczekiwany HTTP %1$ld",
+  "graph.credit.description": "kredyt zużycia: %1$ld%% → %2$ld%%",
   "graph.now": "teraz",
-  "graph.placeholder": "Brak danych resetu",
   "graph.stats.blocked": "zablokowane · odnowienie o %1$@",
   "graph.stats.blocked_date": "zablokowane · odnowienie %1$@",
   "graph.stats.collecting": "zbieranie danych…",
@@ -85,6 +85,23 @@
   "prefs.button.save": "Zachowaj",
   "prefs.launch_at_login": "Uruchamiaj przy logowaniu",
   "prefs.reset_sound": "Odtwórz dźwięk po zresetowaniu krytycznego limitu",
+  "prefs.retention.label": "Przechowuj historię użycia (lat):",
+  "prefs.retention.confirm.title": "Usunąć zarchiwizowaną historię?",
+  "prefs.retention.confirm.years_phrase": {
+    "one": "%1$ld rok",
+    "few": "%1$ld lata",
+    "many": "%1$ld lat",
+    "other": "%1$ld roku"
+  },
+  "prefs.retention.confirm.windows_phrase": {
+    "one": "%1$ld zarchiwizowane okno",
+    "few": "%1$ld zarchiwizowane okna",
+    "many": "%1$ld zarchiwizowanych okien",
+    "other": "%1$ld zarchiwizowanego okna"
+  },
+  "prefs.retention.confirm.message": "Zmniejszenie okresu przechowywania do %1$@ trwale usunie %2$@. Tej operacji nie można cofnąć.",
+  "prefs.retention.confirm.delete_button": "Usuń",
+  "prefs.retention.confirm.cancel_button": "Anuluj",
   "prefs.window.title": "Claude Monitor – Preferencje",
   "setup.button.skip": "Pomiń",
   "setup.button.start": "Rozpocznij",
@@ -96,5 +113,12 @@
   "status.operational": "Operacyjny",
   "status.partial_outage": "Częściowa awaria",
   "status.unknown": "Nieznany",
-  "window.scope.all": "wszystkie"
+  "window.scope.all": "wszystkie",
+  "menu.history.saveFailing": "Zapisywanie historii nie powiodło się (od %@)",
+  "menu.history.quarantinedCount": {
+    "one": "%1$ld skwarantannowany plik historii",
+    "few": "%1$ld skwarantannowane pliki historii",
+    "many": "%1$ld skwarantannowanych plików historii",
+    "other": "%1$ld skwarantannowanego pliku historii"
+  }
 }

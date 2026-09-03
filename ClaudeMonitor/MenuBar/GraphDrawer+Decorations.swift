@@ -37,7 +37,19 @@ extension GraphDrawer {
             .foregroundColor: NSColor.secondaryLabelColor
         ]
         let bgColor = NSColor.windowBackgroundColor
-        for (pct, label) in [(0.0, "0%"), (50.0, "50%"), (100.0, "100%")] {
+        // Locale-aware, replacing hardcoded "0%"/"50%"/"100%" — those literals forced the percent
+        // sign to trail the number and used Western-Arabic numerals in every locale, including
+        // ones that lead with the sign or use a different numbering system. Built once per axis
+        // draw rather than as a shared static: this method is nonisolated and `NumberFormatter`
+        // is not `Sendable`, so a stored instance would need an unsafe opt-out to be reachable.
+        let percentFormatter = NumberFormatter()
+        percentFormatter.numberStyle = .percent
+        percentFormatter.locale = .autoupdatingCurrent
+        percentFormatter.maximumFractionDigits = 0
+
+        for pct in [0.0, 50.0, 100.0] {
+            // `.percent` multiplies by 100, so the fraction is what goes in.
+            let label = percentFormatter.string(from: NSNumber(value: pct / 100)) ?? "\(Int(pct))%"
             let str = NSAttributedString(string: label, attributes: attrs)
             let size = str.size()
             let x = rect.minX + Layout.yAxisLabelInset
