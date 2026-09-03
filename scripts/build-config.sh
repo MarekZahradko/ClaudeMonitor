@@ -6,7 +6,7 @@
 
 APP_NAME="ClaudeMonitor"
 BUNDLE_ID="com.dancingZdenda.ClaudeMonitor"
-VERSION="1.0"
+VERSION="1.2.0"
 DEPLOYMENT_TARGET="15.0"
 SWIFT_VERSION="6"
 DEFAULT_ISOLATION="nonisolated"
