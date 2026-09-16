@@ -44,59 +44,65 @@ final class CredentialFormView: NSView {
     /// when editing, the newly-created id when adding), or `nil` on any validation/save failure.
     @discardableResult
     func validateAndSave(in window: NSWindow) -> String? {
+        guard let fields = validatedFields(in: window) else { return nil }
+        return persist(fields, in: window)
+    }
+
+    private typealias Fields = (name: String, orgId: String, cookie: String)
+
+    /// Trimmed, non-empty values with a parseable organization ID — or nil, after telling the user
+    /// which part is wrong.
+    private func validatedFields(in window: NSWindow) -> Fields? {
         let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         let cookie = cookieTextView.string.trimmingCharacters(in: .whitespacesAndNewlines)
         let orgId = orgIdField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !name.isEmpty, !cookie.isEmpty, !orgId.isEmpty else {
-            showAlert(
-                in: window,
-                title: String(localized: "credentials.alert.missing.title", bundle: .module),
-                message: String(localized: "credentials.alert.missing.message", bundle: .module),
-                style: .warning
-            )
+            showAlert(in: window, keys: "credentials.alert.missing", style: .warning)
             return nil
         }
-
         guard UUID(uuidString: orgId) != nil else {
-            showAlert(
-                in: window,
-                title: String(localized: "credentials.alert.invalid_org.title", bundle: .module),
-                message: String(localized: "credentials.alert.invalid_org.message", bundle: .module),
-                style: .warning
-            )
+            showAlert(in: window, keys: "credentials.alert.invalid_org", style: .warning)
             return nil
         }
+        return (name, orgId, cookie)
+    }
 
+    /// The id of the profile written, or nil after reporting why it could not be.
+    private func persist(_ fields: Fields, in window: NSWindow) -> String? {
         do {
             if let profile = editingProfile {
-                try profileStore.updateProfile(id: profile.id, name: name, organizationId: orgId, cookie: cookie)
+                try profileStore.updateProfile(
+                    id: profile.id, name: fields.name,
+                    organizationId: fields.orgId, cookie: fields.cookie
+                )
                 return profile.id
-            } else {
-                let created = try profileStore.addProfile(name: name, organizationId: orgId, cookie: cookie)
-                // The first-ever profile must become active, or nothing would be monitored.
-                if profileStore.activeProfile == nil {
-                    profileStore.setActive(id: created.id)
-                }
-                return created.id
             }
-        } catch ProfileStoreError.duplicateOrganization {
-            showAlert(
-                in: window,
-                title: String(localized: "credentials.alert.duplicate_org.title", bundle: .module),
-                message: String(localized: "credentials.alert.duplicate_org.message", bundle: .module),
-                style: .warning
+            let created = try profileStore.addProfile(
+                name: fields.name, organizationId: fields.orgId, cookie: fields.cookie
             )
+            // The first-ever profile must become active, or nothing would be monitored.
+            if profileStore.activeProfile == nil {
+                profileStore.setActive(id: created.id)
+            }
+            return created.id
+        } catch ProfileStoreError.duplicateOrganization {
+            showAlert(in: window, keys: "credentials.alert.duplicate_org", style: .warning)
             return nil
         } catch {
-            showAlert(
-                in: window,
-                title: String(localized: "credentials.alert.save_failed.title", bundle: .module),
-                message: String(localized: "credentials.alert.save_failed.message", bundle: .module),
-                style: .critical
-            )
+            showAlert(in: window, keys: "credentials.alert.save_failed", style: .critical)
             return nil
         }
+    }
+
+    /// The four alerts this form can raise differ only in their key prefix and their severity.
+    private func showAlert(in window: NSWindow, keys prefix: String, style: NSAlert.Style) {
+        showAlert(
+            in: window,
+            title: String(localized: String.LocalizationValue("\(prefix).title"), bundle: .module),
+            message: String(localized: String.LocalizationValue("\(prefix).message"), bundle: .module),
+            style: style
+        )
     }
 
     private func showAlert(in window: NSWindow, title: String, message: String, style: NSAlert.Style) {
@@ -143,14 +149,23 @@ final class CredentialFormView: NSView {
         cookieTextView.autoresizingMask = [.width]
         cookieScrollView.documentView = cookieTextView
 
-        for view in [nameLabel, nameField, orgInstructions, orgIdLabel, orgIdField, cookieInstructions, cookieLabel, cookieScrollView] as [NSView] {
+        for view in [
+            nameLabel, nameField, orgInstructions, orgIdLabel, orgIdField,
+            cookieInstructions, cookieLabel, cookieScrollView,
+        ] as [NSView] {
             addSubview(view)
         }
 
-        activateConstraints(nameLabel: nameLabel, orgInstructions: orgInstructions, orgIdLabel: orgIdLabel, cookieInstructions: cookieInstructions, cookieLabel: cookieLabel)
+        activateConstraints(
+            nameLabel: nameLabel, orgInstructions: orgInstructions, orgIdLabel: orgIdLabel,
+            cookieInstructions: cookieInstructions, cookieLabel: cookieLabel
+        )
     }
 
-    private func activateConstraints(nameLabel: NSView, orgInstructions: NSView, orgIdLabel: NSView, cookieInstructions: NSView, cookieLabel: NSView) {
+    private func activateConstraints(
+        nameLabel: NSView, orgInstructions: NSView, orgIdLabel: NSView,
+        cookieInstructions: NSView, cookieLabel: NSView
+    ) {
         NSLayoutConstraint.activate([
             nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
             nameLabel.topAnchor.constraint(equalTo: topAnchor),

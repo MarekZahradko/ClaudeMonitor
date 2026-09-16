@@ -127,7 +127,10 @@ final class MenuBarController: NSObject, MenuActions {
 
     @objc func didSelectPreferences() {
         openWindow(&preferencesController) {
-            PreferencesWindowController(usageHistory: coordinator.usageHistory, profileStore: coordinator.profileStore) { [weak self] in self?.coordinator.restartPolling() }
+            PreferencesWindowController(
+                usageHistory: coordinator.usageHistory,
+                profileStore: coordinator.profileStore
+            ) { [weak self] in self?.coordinator.restartPolling() }
         }
     }
 

@@ -58,7 +58,12 @@ extension MenuBuilder {
         }
 
         let usageSubtitle = state.polling.isAnyServiceStale ? nil : "Claude Monitor"
-        items.append(sectionHeader(String(localized: "menu.section.usage", bundle: .module), subtitle: usageSubtitle, tag: usageSectionTag, switcher: accountSwitcher(state: state, target: target)))
+        items.append(sectionHeader(
+            String(localized: "menu.section.usage", bundle: .module),
+            subtitle: usageSubtitle,
+            tag: usageSectionTag,
+            switcher: accountSwitcher(state: state, target: target)
+        ))
         let (usageMenuItems, cache) = usageItems(state: state, target: target)
         items.append(contentsOf: usageMenuItems)
 
