@@ -9,6 +9,32 @@ enum Constants {
         static let fallbackUUIDAccount = "fallbackUUID"
     }
 
+    enum Profiles {
+        /// Plaintext UserDefaults key holding the JSON-encoded `[Profile]` registry. Presence of
+        /// this key (even for an empty array) is the "migration already ran" marker — never key
+        /// migration off an empty list, or a user who deleted their last profile would be
+        /// re-migrated from stale legacy keys.
+        static let registryKey = "profiles"
+        /// Plaintext UserDefaults key holding the active profile's id.
+        static let activeIdKey = "activeProfileId"
+        /// Soft cap on how many profiles a user can keep — this is a personal tool and the menu
+        /// would only get cluttered beyond a handful.
+        static let maxCount = 5
+        /// Fallback name for the profile synthesized from a pre-profiles single credential set on
+        /// first launch after upgrade. Deliberately un-localized: it is a one-time seed the user
+        /// renames once the profile-management UI ships; localizing it would churn 30 files for a
+        /// string that exists only until the first rename.
+        static let migratedProfileDefaultName = "Account 1"
+
+        /// Per-profile cookie is stored in the encrypted trezor under this prefix + profile id, so
+        /// each account keeps its own session cookie alongside the others.
+        static let cookieKeyPrefix = "cookieString."
+
+        static func cookieKey(profileId: String) -> String {
+            cookieKeyPrefix + profileId
+        }
+    }
+
     enum IOKit {
         static let hidSystemServiceName = "IOHIDSystem"
         static let hidIdleTimeKey = "HIDIdleTime"
@@ -96,6 +122,21 @@ enum Constants {
     enum Preferences {
         static let resetSoundEnabled = "resetSoundEnabled"
         static let historyRetentionYears = "historyRetentionYears"
+        static let showUsageGraph = "showUsageGraph"
+
+        /// Whether the dropdown shows the usage graph. Absent (never set) defaults to `true`, so
+        /// existing users keep the graph until they explicitly turn it off.
+        static func isUsageGraphEnabled(defaults: UserDefaults = .standard) -> Bool {
+            defaults.object(forKey: showUsageGraph) == nil ? true : defaults.bool(forKey: showUsageGraph)
+        }
+
+        static let compactServices = "compactServices"
+
+        /// Whether the Services section is compact (one line when all healthy, affected only) vs the
+        /// full list with a row per component. Absent defaults to compact.
+        static func isServicesCompact(defaults: UserDefaults = .standard) -> Bool {
+            defaults.object(forKey: compactServices) == nil ? true : defaults.bool(forKey: compactServices)
+        }
     }
 
     enum Sounds {
