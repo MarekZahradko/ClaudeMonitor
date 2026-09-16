@@ -93,7 +93,7 @@ final class RetentionConfirmationRecorder {
         let fixture = UsageHistoryTestFixture()
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
 
         controller.isRetentionAlertPresented = true
         controller.loadSavedValues()
@@ -122,7 +122,7 @@ final class RetentionConfirmationRecorder {
 
         defaults.set(3, forKey: key)
         let fixture = UsageHistoryTestFixture()
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         #expect(controller.displayedRetentionYears == 3)
 
         defaults.set(7, forKey: key)
@@ -140,7 +140,7 @@ final class RetentionConfirmationRecorder {
         let fixture = UsageHistoryTestFixture()
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
 
         #expect(controller.installedRetentionFormatter is RetentionPartialInputFormatter)
     }
@@ -153,7 +153,7 @@ final class RetentionConfirmationRecorder {
         let fixture = UsageHistoryTestFixture()
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
 
         let config = controller.retentionStepperConfiguration
         #expect(config.minValue == Double(Constants.History.minRetentionYears))
@@ -171,7 +171,7 @@ final class RetentionConfirmationRecorder {
         let fixture = UsageHistoryTestFixture()
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         let formatter = controller.installedRetentionFormatter
 
         #expect(formatter?.isPartialStringValid("9", newEditingString: nil, errorDescription: nil) == true)
@@ -185,7 +185,7 @@ final class RetentionConfirmationRecorder {
         let fixture = UsageHistoryTestFixture()
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         let formatter = controller.installedRetentionFormatter
 
         #expect(formatter?.isPartialStringValid("1", newEditingString: nil, errorDescription: nil) == true)
@@ -203,7 +203,7 @@ final class RetentionConfirmationRecorder {
         let fixture = UsageHistoryTestFixture()
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         let formatter = controller.installedRetentionFormatter
 
         // Arabic-Indic five, and fullwidth five.
@@ -231,7 +231,7 @@ final class RetentionConfirmationRecorder {
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(2, forKey: Constants.Preferences.historyRetentionYears)
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
 
         controller.simulateRetentionFieldEntry("99")
         await controller.awaitPendingRetentionChange()
@@ -254,7 +254,7 @@ final class RetentionConfirmationRecorder {
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(Constants.History.minRetentionYears, forKey: Constants.Preferences.historyRetentionYears)
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
 
         controller.simulateRetentionFieldEntry("0")
         await controller.awaitPendingRetentionChange()
@@ -270,7 +270,7 @@ final class RetentionConfirmationRecorder {
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(2, forKey: Constants.Preferences.historyRetentionYears)
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
 
         controller.simulateRetentionStepperEntry(Constants.History.maxRetentionYears + 50)
         await controller.awaitPendingRetentionChange()
@@ -294,7 +294,7 @@ final class RetentionConfirmationRecorder {
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(5, forKey: Constants.Preferences.historyRetentionYears)
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         let recorder = RetentionConfirmationRecorder(answer: false)
         controller.retentionDecreaseConfirmationOverride = { newValue, count in
             await recorder.confirm(newValue: newValue, deletingCount: count)
@@ -329,7 +329,7 @@ final class RetentionConfirmationRecorder {
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(5, forKey: Constants.Preferences.historyRetentionYears)
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         let recorder = RetentionConfirmationRecorder(answer: false)
         controller.retentionDecreaseConfirmationOverride = { newValue, count in
             await recorder.confirm(newValue: newValue, deletingCount: count)
@@ -362,7 +362,7 @@ final class RetentionConfirmationRecorder {
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(5, forKey: Constants.Preferences.historyRetentionYears)
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         let recorder = RetentionConfirmationRecorder(answer: true)
         controller.retentionDecreaseConfirmationOverride = { newValue, count in
             await recorder.confirm(newValue: newValue, deletingCount: count)
@@ -394,7 +394,7 @@ final class RetentionConfirmationRecorder {
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(5, forKey: Constants.Preferences.historyRetentionYears)
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         let recorder = RetentionConfirmationRecorder(answer: true)
         controller.retentionDecreaseConfirmationOverride = { newValue, count in
             await recorder.confirm(newValue: newValue, deletingCount: count)
@@ -424,7 +424,7 @@ final class RetentionConfirmationRecorder {
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(5, forKey: Constants.Preferences.historyRetentionYears)
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         let recorder = RetentionConfirmationRecorder(answer: true)
         controller.retentionDecreaseConfirmationOverride = { newValue, count in
             await recorder.confirm(newValue: newValue, deletingCount: count)
@@ -477,7 +477,7 @@ final class RetentionConfirmationRecorder {
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(Constants.History.maxRetentionYears, forKey: Constants.Preferences.historyRetentionYears)
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         let recorder = RetentionConfirmationRecorder(answer: false)
         controller.retentionDecreaseConfirmationOverride = { newValue, count in
             await recorder.confirm(newValue: newValue, deletingCount: count)
@@ -519,7 +519,7 @@ final class RetentionConfirmationRecorder {
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(2, forKey: Constants.Preferences.historyRetentionYears)
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         let recorder = RetentionConfirmationRecorder(answer: true)
         controller.retentionDecreaseConfirmationOverride = { newValue, count in
             await recorder.confirm(newValue: newValue, deletingCount: count)
@@ -571,7 +571,7 @@ final class RetentionConfirmationRecorder {
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(5, forKey: Constants.Preferences.historyRetentionYears)
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         let recorder = RetentionConfirmationRecorder(answer: true)
         controller.retentionDecreaseConfirmationOverride = { newValue, count in
             await recorder.confirm(newValue: newValue, deletingCount: count)
@@ -609,7 +609,7 @@ final class RetentionConfirmationRecorder {
         let (defaults, suiteName) = Self.makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(1, forKey: Constants.Preferences.historyRetentionYears)
-        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, onSave: {})
+        let controller = PreferencesWindowController(usageHistory: fixture.history, defaults: defaults, profileStore: makeTestProfileStore(secrets: InMemorySecrets()), onSave: {})
         let recorder = RetentionConfirmationRecorder(answer: false)
         controller.retentionDecreaseConfirmationOverride = { newValue, count in
             await recorder.confirm(newValue: newValue, deletingCount: count)

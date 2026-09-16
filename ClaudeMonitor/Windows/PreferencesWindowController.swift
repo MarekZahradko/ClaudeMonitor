@@ -68,9 +68,16 @@ final class RetentionPartialInputFormatter: NumberFormatter, @unchecked Sendable
 
 @MainActor
 final class PreferencesWindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegate {
-    private let credentialForm = CredentialFormView()
+    private let profileStore: ProfileStore
+    private let tabView = NSTabView()
+    private var accountForms: [String: CredentialFormView] = [:]
+    private var addForm: CredentialFormView?
+    private static let generalTabIdentifier = "general"
+    private static let addTabIdentifier = "add"
     private let launchAtLoginCheckbox = NSButton(checkboxWithTitle: String(localized: "prefs.launch_at_login", bundle: .module), target: nil, action: nil)
     private let resetSoundCheckbox = NSButton(checkboxWithTitle: String(localized: "prefs.reset_sound", bundle: .module), target: nil, action: nil)
+    private let showGraphCheckbox = NSButton(checkboxWithTitle: String(localized: "prefs.show_graph", bundle: .module), target: nil, action: nil)
+    private let compactServicesCheckbox = NSButton(checkboxWithTitle: String(localized: "prefs.compact_services", bundle: .module), target: nil, action: nil)
     private let retentionLabel = NSTextField(labelWithString: String(localized: "prefs.retention.label", bundle: .module))
     private let retentionField = NSTextField()
     private let retentionStepper = NSStepper()
@@ -141,9 +148,10 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
     /// `UserDefaults.standard`, which the real running app also reads. Same seam
     /// `Constants.History.retentionYears(defaults:)` already exposes; this just threads it
     /// through the one call site here that previously bypassed it via the defaulted overload.
-    init(usageHistory: UsageHistory, defaults: UserDefaults = .standard, onSave: @escaping () -> Void) {
+    init(usageHistory: UsageHistory, defaults: UserDefaults = .standard, profileStore: ProfileStore, onSave: @escaping () -> Void) {
         self.usageHistory = usageHistory
         self.defaults = defaults
+        self.profileStore = profileStore
         self.onSave = onSave
         self.currentRetentionYears = Constants.History.retentionYears(defaults: defaults)
         let window = NSWindow(
@@ -166,12 +174,6 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
     private func buildUI() {
         guard let contentView = window?.contentView else { return }
 
-        launchAtLoginCheckbox.translatesAutoresizingMaskIntoConstraints = false
-        resetSoundCheckbox.translatesAutoresizingMaskIntoConstraints = false
-        retentionLabel.translatesAutoresizingMaskIntoConstraints = false
-        retentionField.translatesAutoresizingMaskIntoConstraints = false
-        retentionStepper.translatesAutoresizingMaskIntoConstraints = false
-
         retentionField.formatter = Self.retentionFormatter
         retentionField.alignment = .right
         retentionField.delegate = self
@@ -183,54 +185,147 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
         retentionStepper.target = self
         retentionStepper.action = #selector(retentionStepperChanged)
 
+        tabView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(tabView)
+        NSLayoutConstraint.activate([
+            tabView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
+            tabView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
+            tabView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            tabView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12),
+        ])
+
+        // The General and Add tabs are persistent (built once); only the per-account tabs are
+        // rebuilt when accounts are added or removed. Building General once avoids re-parenting the
+        // controller-owned retention/login controls on every account change.
+        let general = NSTabViewItem(identifier: Self.generalTabIdentifier)
+        general.label = String(localized: "prefs.tab.general", bundle: .module)
+        general.view = makeGeneralView()
+        tabView.addTabViewItem(general)
+
+        let add = NSTabViewItem(identifier: Self.addTabIdentifier)
+        add.label = String(localized: "prefs.tab.add", bundle: .module)
+        add.view = makeAddView()
+        tabView.addTabViewItem(add)
+
+        rebuildAccountTabs()
+        loadSavedValues()
+    }
+
+    // MARK: - Tabs
+
+    /// Removes the per-account tabs and rebuilds them from the current profiles, inserting them
+    /// before the persistent General/Add tabs. Called at build time, on `showWindow`, and after any
+    /// add/delete so the tab bar always mirrors the store.
+    private func rebuildAccountTabs() {
+        for item in tabView.tabViewItems where (item.identifier as? String).map({ $0 != Self.generalTabIdentifier && $0 != Self.addTabIdentifier }) ?? false {
+            tabView.removeTabViewItem(item)
+        }
+        accountForms.removeAll()
+        for (index, profile) in profileStore.profiles.enumerated() {
+            let item = NSTabViewItem(identifier: profile.id)
+            item.label = profile.name
+            item.view = makeAccountView(profileId: profile.id)
+            tabView.insertTabViewItem(item, at: index)
+        }
+    }
+
+    private func makeAccountView(profileId: String) -> NSView {
+        let form = CredentialFormView(profileStore: profileStore, profileId: profileId)
+        form.loadSavedValues()
+        accountForms[profileId] = form
+        let deleteButton = NSButton(title: String(localized: "prefs.button.delete_account", bundle: .module), target: self, action: #selector(didTapDelete))
+        deleteButton.bezelStyle = .rounded
+        return makeEditorView(form: form, primaryTitle: String(localized: "prefs.button.save", bundle: .module), secondary: deleteButton)
+    }
+
+    private func makeAddView() -> NSView {
+        let form = CredentialFormView(profileStore: profileStore, profileId: nil)
+        form.loadSavedValues()
+        addForm = form
+        return makeEditorView(form: form, primaryTitle: String(localized: "prefs.button.add_account", bundle: .module), secondary: nil)
+    }
+
+    /// Lays a credential form above a bottom button row: the primary (Save/Add) button on the
+    /// right, an optional secondary (Delete) button on the left.
+    private func makeEditorView(form: CredentialFormView, primaryTitle: String, secondary: NSButton?) -> NSView {
+        let container = NSView()
+        let primary = NSButton(title: primaryTitle, target: self, action: #selector(didTapSave))
+        primary.bezelStyle = .rounded
+        primary.keyEquivalent = "\r"
+        primary.translatesAutoresizingMaskIntoConstraints = false
+
+        container.addSubview(form)
+        container.addSubview(primary)
+        NSLayoutConstraint.activate([
+            form.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
+            form.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+            form.topAnchor.constraint(equalTo: container.topAnchor, constant: 12),
+
+            primary.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+            primary.topAnchor.constraint(equalTo: form.bottomAnchor, constant: 12),
+            primary.bottomAnchor.constraint(lessThanOrEqualTo: container.bottomAnchor, constant: -12),
+        ])
+        if let secondary {
+            secondary.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(secondary)
+            NSLayoutConstraint.activate([
+                secondary.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
+                secondary.centerYAnchor.constraint(equalTo: primary.centerYAnchor),
+            ])
+        }
+        return container
+    }
+
+    private func makeGeneralView() -> NSView {
+        let container = NSView()
+        for control in [launchAtLoginCheckbox, resetSoundCheckbox, showGraphCheckbox, compactServicesCheckbox, retentionLabel, retentionField, retentionStepper] {
+            control.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(control)
+        }
         let saveButton = NSButton(title: String(localized: "prefs.button.save", bundle: .module), target: self, action: #selector(didTapSave))
         saveButton.bezelStyle = .rounded
         saveButton.keyEquivalent = "\r"
         saveButton.translatesAutoresizingMaskIntoConstraints = false
-
-        contentView.addSubview(credentialForm)
-        contentView.addSubview(launchAtLoginCheckbox)
-        contentView.addSubview(resetSoundCheckbox)
-        contentView.addSubview(retentionLabel)
-        contentView.addSubview(retentionField)
-        contentView.addSubview(retentionStepper)
-        contentView.addSubview(saveButton)
+        container.addSubview(saveButton)
 
         NSLayoutConstraint.activate([
-            credentialForm.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            credentialForm.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            credentialForm.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            launchAtLoginCheckbox.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            launchAtLoginCheckbox.topAnchor.constraint(equalTo: container.topAnchor, constant: 20),
 
-            launchAtLoginCheckbox.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            launchAtLoginCheckbox.topAnchor.constraint(equalTo: credentialForm.bottomAnchor, constant: 14),
-
-            resetSoundCheckbox.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            resetSoundCheckbox.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
             resetSoundCheckbox.topAnchor.constraint(equalTo: launchAtLoginCheckbox.bottomAnchor, constant: 10),
 
-            retentionLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            showGraphCheckbox.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            showGraphCheckbox.topAnchor.constraint(equalTo: resetSoundCheckbox.bottomAnchor, constant: 10),
+
+            compactServicesCheckbox.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            compactServicesCheckbox.topAnchor.constraint(equalTo: showGraphCheckbox.bottomAnchor, constant: 10),
+
+            retentionLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
             retentionLabel.centerYAnchor.constraint(equalTo: retentionField.centerYAnchor),
 
             retentionField.leadingAnchor.constraint(equalTo: retentionLabel.trailingAnchor, constant: 8),
-            retentionField.topAnchor.constraint(equalTo: resetSoundCheckbox.bottomAnchor, constant: 14),
+            retentionField.topAnchor.constraint(equalTo: compactServicesCheckbox.bottomAnchor, constant: 16),
             retentionField.widthAnchor.constraint(equalToConstant: 46),
 
             retentionStepper.leadingAnchor.constraint(equalTo: retentionField.trailingAnchor, constant: 4),
             retentionStepper.centerYAnchor.constraint(equalTo: retentionField.centerYAnchor),
 
-            saveButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            saveButton.topAnchor.constraint(equalTo: retentionField.bottomAnchor, constant: 14),
-            saveButton.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -16),
+            saveButton.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            saveButton.topAnchor.constraint(greaterThanOrEqualTo: retentionField.bottomAnchor, constant: 16),
+            saveButton.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -16),
         ])
-
-        loadSavedValues()
+        return container
     }
+
 
     // Internal rather than private so `PreferencesWindowControllerTests` can call it directly —
     // see the doc comment on `isRetentionAlertPresented`.
     func loadSavedValues() {
-        credentialForm.loadSavedValues()
         launchAtLoginCheckbox.state = SMAppService.mainApp.status == .enabled ? .on : .off
         resetSoundCheckbox.state = defaults.bool(forKey: Constants.Preferences.resetSoundEnabled) ? .on : .off
+        showGraphCheckbox.state = Constants.Preferences.isUsageGraphEnabled(defaults: defaults) ? .on : .off
+        compactServicesCheckbox.state = Constants.Preferences.isServicesCompact(defaults: defaults) ? .on : .off
 
         // While a decrease-confirmation sheet is on screen, its own completion handler is the
         // only thing allowed to resolve `currentRetentionYears`/the displayed fields — see
@@ -427,10 +522,37 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
         setRetentionDisplay(currentRetentionYears)
     }
 
+    /// The single Save/Add button action for every tab; dispatches on the selected tab. General
+    /// persists login/sound and closes; an account tab validates and updates that account and
+    /// closes; the Add tab validates and creates a new account, then stays open on its new tab.
     @objc private func didTapSave() {
         guard let window else { return }
-        guard credentialForm.validateAndSave(in: window) else { return }
+        let identifier = tabView.selectedTabViewItem?.identifier as? String
 
+        switch identifier {
+        case Self.generalTabIdentifier:
+            saveGeneralSettings()
+            close()
+            onSave()
+
+        case Self.addTabIdentifier:
+            guard let newId = addForm?.validateAndSave(in: window) else { return }
+            onSave()
+            rebuildAccountTabs()
+            tabView.selectTabViewItem(withIdentifier: newId)
+            addForm?.loadSavedValues()
+
+        case .some(let id):
+            guard accountForms[id]?.validateAndSave(in: window) != nil else { return }
+            close()
+            onSave()
+
+        case .none:
+            break
+        }
+    }
+
+    private func saveGeneralSettings() {
         do {
             if launchAtLoginCheckbox.state == .on {
                 try SMAppService.mainApp.register()
@@ -440,10 +562,25 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
         } catch {
             // Login item registration can fail silently — not critical
         }
-
         defaults.set(resetSoundCheckbox.state == .on, forKey: Constants.Preferences.resetSoundEnabled)
+        defaults.set(showGraphCheckbox.state == .on, forKey: Constants.Preferences.showUsageGraph)
+        defaults.set(compactServicesCheckbox.state == .on, forKey: Constants.Preferences.compactServices)
+    }
 
-        close()
+    @objc private func didTapDelete() {
+        guard let id = tabView.selectedTabViewItem?.identifier as? String,
+              let profile = profileStore.profiles.first(where: { $0.id == id }) else { return }
+        let alert = NSAlert()
+        alert.messageText = String(localized: "account.remove.confirm.title", bundle: .module)
+        alert.informativeText = String(
+            format: String(localized: "account.remove.confirm.message", bundle: .module), profile.name
+        )
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: String(localized: "account.remove.confirm.remove", bundle: .module))
+        alert.addButton(withTitle: String(localized: "account.remove.confirm.cancel", bundle: .module))
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        profileStore.removeProfile(id: id)
+        rebuildAccountTabs()
         onSave()
     }
 
@@ -452,6 +589,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
         // = false`), and shown again; re-sync every control from persisted state each time so a
         // reopened window can never display a stale value left over from a prior optimistic
         // repaint or an in-flight change that never committed.
+        rebuildAccountTabs()
         loadSavedValues()
         super.showWindow(sender)
         WindowManager.bringToFront(window)
