@@ -15,6 +15,12 @@ extension MenuBuilder {
     /// Account names in the header switcher are kept short so two of them fit centered in the row.
     static let switcherNameMaxLength = 14
 
+    /// Both header labels share one shade — the section word ("Usage", "Services") and the trailing
+    /// text ("Claude Monitor", "All systems operational") read as a single row. They used to sit on
+    /// `disabledControlTextColor` and `tertiaryLabelColor`, which rendered them near-invisible and
+    /// mismatched against each other.
+    static let headerTextColor = NSColor.secondaryLabelColor
+
     static func makeHeaderView(title: String, subtitle: String, switcher: HeaderAccountSwitcher? = nil) -> NSView {
         let font = NSFont.menuFont(ofSize: 0)
         let height: CGFloat = 22
@@ -22,13 +28,13 @@ extension MenuBuilder {
 
         let leftLabel = NSTextField(labelWithString: title)
         leftLabel.font = font
-        leftLabel.textColor = .disabledControlTextColor
+        leftLabel.textColor = headerTextColor
         leftLabel.sizeToFit()
         leftLabel.frame.origin = NSPoint(x: edgePadding, y: (height - leftLabel.frame.height) / 2)
 
         let rightLabel = NSTextField(labelWithString: subtitle)
         rightLabel.font = font
-        rightLabel.textColor = .tertiaryLabelColor
+        rightLabel.textColor = headerTextColor
         rightLabel.sizeToFit()
         rightLabel.autoresizingMask = .minXMargin
 
