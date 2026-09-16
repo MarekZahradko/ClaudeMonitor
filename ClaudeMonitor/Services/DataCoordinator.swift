@@ -12,6 +12,9 @@ final class DataCoordinator {
     var demoRotationIndex = 0
     var loadedCredentials: (cookie: String, orgId: String)?
     let usageHistory: UsageHistory
+    /// Reads Claude Code's local logs on its own cadence — see EnergyMonitor for why it is not on
+    /// the network poll. Never started from here; MenuBarController starts it at launch.
+    let energyMonitor: EnergyMonitor
     var demoFrame: DemoData.DemoFrame?
     var lastFailedAt: Date?
     // Runs pruneArchives() once at launch and then on Constants.History.pruneInterval
@@ -45,7 +48,8 @@ final class DataCoordinator {
         systemIdleProvider: any SystemIdleProviding = SystemIdleService(),
         pathMonitor: any PathMonitoring = PathMonitor(),
         profileStore: ProfileStore = ProfileStore(),
-        usageHistory: UsageHistory = UsageHistory(baseDirectory: UsageHistory.productionBaseDirectory)
+        usageHistory: UsageHistory = UsageHistory(baseDirectory: UsageHistory.productionBaseDirectory),
+        energyMonitor: EnergyMonitor = EnergyMonitor()
     ) {
         self.statusService = statusService
         self.usageService = usageService
@@ -53,6 +57,8 @@ final class DataCoordinator {
         self.pathMonitor = pathMonitor
         self.profileStore = profileStore
         self.usageHistory = usageHistory
+        self.energyMonitor = energyMonitor
+        energyMonitor.onUpdate = { [weak self] in self?.onUpdate?() }
         reloadCredentials()
         historyMaintenanceTask = Task { [weak self, usageHistory] in
             await self?.runLegacyArchiveMigrationAndPrune()
@@ -110,6 +116,7 @@ extension DataCoordinator {
                 quarantinedFileCount: quarantinedFileCount
             ),
             profiles: ProfileSnapshot(profiles: profileStore.profiles, activeId: profileStore.activeId),
+            energy: energyMonitor.estimate,
             lastRefreshed: lastRefreshed,
             hasCredentials: hasCredentials,
             showGraph: Constants.Preferences.isUsageGraphEnabled(),

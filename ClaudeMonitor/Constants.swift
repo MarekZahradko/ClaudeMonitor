@@ -189,6 +189,14 @@ enum Constants {
         /// Already contained in the anchor above. Present so a GPU-level anchor could be swapped in
         /// without the multiplier being lost, not because it should be changed to 1.12 here.
         static let pue = 1.0
+
+        /// How often the logs are re-read. A repeat scan reads only what was appended and costs
+        /// tens of milliseconds, so this is paced for how fast the number meaningfully changes,
+        /// not for how expensive the scan is.
+        static let scanInterval: TimeInterval = 120
+        /// Scan state is only written this often. Losing it costs one background cold scan on the
+        /// next launch, which is cheaper than writing a megabyte every two minutes.
+        static let statePersistInterval: TimeInterval = 600
     }
 
     enum History {
