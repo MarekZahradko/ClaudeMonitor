@@ -10,6 +10,10 @@ struct HeaderAccountSwitcher {
 }
 
 extension MenuBuilder {
+    /// Horizontal inset the dropdown's rows line up on — the header labels, the control row and the
+    /// stats row all use it, so a row that picks its own number visibly steps out of the column.
+    static let rowTrailingInset: CGFloat = 14
+
     static let maxDisplayLength = 40
     static let truncatedPrefixLength = 30
     /// Account names in the header switcher are kept short so two of them fit centered in the row.
