@@ -1,7 +1,10 @@
 import AppKit
 
 extension MenuBuilder {
-    static func controlItems(state: MonitorState, target: any MenuActions) -> [NSMenuItem] {
+    /// The remaining dropdown footer: the "Updated / Next poll" line and the history-health status.
+    /// The action items (Refresh / Preferences / About / Quit) now live behind the header's "⋯"
+    /// button — see `makeOverflowMenu`.
+    static func controlItems(state: MonitorState) -> [NSMenuItem] {
         var items: [NSMenuItem] = []
 
         if let date = state.lastRefreshed {
@@ -17,38 +20,106 @@ extension MenuBuilder {
             items.append(item)
         }
 
-        items.append(separator(tag: separatorControlsTag))
+        return items
+    }
+
+    /// The compact account switcher embedded in the Usage header, or `nil` with fewer than two
+    /// accounts — there is nothing to toggle between. Selecting a segment drives `didSelectProfile`.
+    static func accountSwitcher(state: MonitorState, target: any MenuActions) -> HeaderAccountSwitcher? {
+        let profiles = state.profiles.profiles
+        guard profiles.count >= 2 else { return nil }
+        return HeaderAccountSwitcher(
+            names: profiles.map { truncatedSwitcherName($0.name) },
+            activeIndex: profiles.firstIndex { $0.id == state.profiles.activeId } ?? 0,
+            onSelect: { [weak target] index in
+                guard profiles.indices.contains(index) else { return }
+                let sender = NSMenuItem()
+                sender.representedObject = profiles[index].id
+                target?.didSelectProfile(sender)
+            }
+        )
+    }
+
+    /// The dropdown's footer action bar: four evenly-spaced icon buttons — Refresh, Preferences,
+    /// About, Quit — each firing its action directly on click.
+    static func footerActionsItem(target: any MenuActions) -> NSMenuItem {
+        let refresh = FooterIconButton(symbol: "arrow.clockwise", help: String(localized: "menu.refresh", bundle: .module))
+        refresh.onClick = { [weak target] in target?.didSelectRefresh() }
+        let prefs = FooterIconButton(symbol: "gearshape", help: String(localized: "menu.preferences", bundle: .module))
+        prefs.onClick = { [weak target] in target?.didSelectPreferences() }
+        let about = FooterIconButton(symbol: "info.circle", help: String(localized: "menu.about", bundle: .module))
+        about.onClick = { [weak target] in target?.didSelectAbout() }
+        let quit = FooterIconButton(symbol: "power", help: String(localized: "menu.quit", bundle: .module))
+        quit.onClick = { NSApplication.shared.terminate(nil) }
+
+        let stack = NSStackView(views: [refresh, prefs, about, quit])
+        stack.orientation = .horizontal
+        stack.distribution = .fillEqually
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 32))
+        container.autoresizingMask = .width
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -14),
+            stack.topAnchor.constraint(equalTo: container.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+
+        let item = NSMenuItem()
+        item.tag = moreTag
+        item.view = container
+        return item
+    }
+
+    /// The overflow menu of the control actions — retained for wiring/documentation and tests.
+    static func makeOverflowMenu(target: any MenuActions) -> NSMenu {
+        let menu = NSMenu()
 
         let refresh = NSMenuItem(title: String(localized: "menu.refresh", bundle: .module),
-                                 action: #selector(MenuActions.didSelectRefresh),
-                                 keyEquivalent: "r")
+                                 action: #selector(MenuActions.didSelectRefresh), keyEquivalent: "r")
         refresh.tag = refreshTag
         refresh.target = target
-        items.append(refresh)
+        menu.addItem(refresh)
 
         let prefs = NSMenuItem(title: String(localized: "menu.preferences", bundle: .module),
-                               action: #selector(MenuActions.didSelectPreferences),
-                               keyEquivalent: ",")
+                               action: #selector(MenuActions.didSelectPreferences), keyEquivalent: ",")
         prefs.tag = preferencesTag
         prefs.target = target
-        items.append(prefs)
+        menu.addItem(prefs)
 
         let about = NSMenuItem(title: String(localized: "menu.about", bundle: .module),
-                               action: #selector(MenuActions.didSelectAbout),
-                               keyEquivalent: "")
+                               action: #selector(MenuActions.didSelectAbout), keyEquivalent: "")
         about.tag = aboutTag
         about.target = target
-        items.append(about)
+        menu.addItem(about)
 
-        items.append(separator(tag: separatorQuitTag))
+        menu.addItem(.separator())
 
         let quit = NSMenuItem(title: String(localized: "menu.quit", bundle: .module),
-                              action: #selector(NSApplication.terminate(_:)),
-                              keyEquivalent: "q")
+                              action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quit.tag = quitTag
-        items.append(quit)
+        menu.addItem(quit)
 
-        return items
+        return menu
+    }
+
+    /// Finds the account toggle nested inside a header view, if present, so the reconciler can
+    /// update its selection in place instead of rebuilding the whole header.
+    static func findAccountToggle(in view: NSView?) -> AccountToggleView? {
+        guard let view else { return nil }
+        if let toggle = view as? AccountToggleView { return toggle }
+        for subview in view.subviews {
+            if let toggle = findAccountToggle(in: subview) { return toggle }
+        }
+        return nil
+    }
+
+    private static func truncatedSwitcherName(_ name: String) -> String {
+        name.count > switcherNameMaxLength
+            ? String(name.prefix(switcherNameMaxLength - 1)).trimmingCharacters(in: .whitespaces) + "…"
+            : name
     }
 
     /// Status line reporting `UsageHistory`'s persistence-failure/quarantine state — `nil` when

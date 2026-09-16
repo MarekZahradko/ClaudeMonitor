@@ -111,5 +111,27 @@
   "menu.history.quarantinedCount": {
     "one": "%1$ld karantenesatt historikkfil",
     "other": "%1$ld karantenesatte historikkfiler"
-  }
+  },
+  "credentials.field.name": "Profilnavn:",
+  "credentials.field.name_placeholder": "Personlig",
+  "credentials.alert.duplicate_org.title": "Duplikatkonto",
+  "credentials.alert.duplicate_org.message": "En annen profil bruker allerede denne organisasjons-ID-en.",
+  "menu.account.current": "Konto: %@",
+  "menu.account.add": "Legg til konto…",
+  "menu.account.remove": "Fjern «%@»…",
+  "menu.more": "Mer",
+  "addaccount.window.title": "Legg til konto",
+  "addaccount.button.add": "Legg til",
+  "addaccount.button.cancel": "Avbryt",
+  "account.remove.confirm.title": "Fjerne konto?",
+  "account.remove.confirm.message": "Dette fjerner «%@» og påloggingsinformasjonen fra ClaudeMonitor. Brukshistorikken på disken beholdes.",
+  "account.remove.confirm.remove": "Fjern",
+  "account.remove.confirm.cancel": "Avbryt",
+  "prefs.tab.general": "Generelt",
+  "prefs.tab.add": "Legg til konto",
+  "prefs.button.add_account": "Legg til konto",
+  "prefs.button.delete_account": "Slett konto",
+  "prefs.show_graph": "Vis bruksgraf",
+  "prefs.compact_services": "Kompakt tjenesteliste",
+  "services.all_operational": "Alle systemer i drift"
 }

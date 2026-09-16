@@ -114,5 +114,27 @@
   "menu.history.quarantinedCount": {
     "one": "%1$ld fichier d'historique mis en quarantaine",
     "other": "%1$ld fichiers d'historique mis en quarantaine"
-  }
+  },
+  "credentials.field.name": "Nom du profil :",
+  "credentials.field.name_placeholder": "Personnel",
+  "credentials.alert.duplicate_org.title": "Compte en double",
+  "credentials.alert.duplicate_org.message": "Un autre profil utilise déjà cet identifiant d’organisation.",
+  "menu.account.current": "Compte : %@",
+  "menu.account.add": "Ajouter un compte…",
+  "menu.account.remove": "Supprimer « %@ »…",
+  "menu.more": "Plus",
+  "addaccount.window.title": "Ajouter un compte",
+  "addaccount.button.add": "Ajouter",
+  "addaccount.button.cancel": "Annuler",
+  "account.remove.confirm.title": "Supprimer le compte ?",
+  "account.remove.confirm.message": "Cela supprime « %@ » et ses identifiants de ClaudeMonitor. Son historique d’utilisation sur le disque est conservé.",
+  "account.remove.confirm.remove": "Supprimer",
+  "account.remove.confirm.cancel": "Annuler",
+  "prefs.tab.general": "Général",
+  "prefs.tab.add": "Ajouter un compte",
+  "prefs.button.add_account": "Ajouter un compte",
+  "prefs.button.delete_account": "Supprimer le compte",
+  "prefs.show_graph": "Afficher le graphique d’utilisation",
+  "prefs.compact_services": "Liste des services compacte",
+  "services.all_operational": "Tous les systèmes opérationnels"
 }

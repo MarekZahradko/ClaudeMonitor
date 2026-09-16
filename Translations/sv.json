@@ -111,5 +111,27 @@
   "menu.history.quarantinedCount": {
     "one": "%1$ld karantänsatt historikfil",
     "other": "%1$ld karantänsatta historikfiler"
-  }
+  },
+  "credentials.field.name": "Profilnamn:",
+  "credentials.field.name_placeholder": "Personligt",
+  "credentials.alert.duplicate_org.title": "Dubblettkonto",
+  "credentials.alert.duplicate_org.message": "En annan profil använder redan detta organisations-ID.",
+  "menu.account.current": "Konto: %@",
+  "menu.account.add": "Lägg till konto…",
+  "menu.account.remove": "Ta bort ”%@”…",
+  "menu.more": "Mer",
+  "addaccount.window.title": "Lägg till konto",
+  "addaccount.button.add": "Lägg till",
+  "addaccount.button.cancel": "Avbryt",
+  "account.remove.confirm.title": "Ta bort konto?",
+  "account.remove.confirm.message": "Detta tar bort ”%@” och dess inloggningsuppgifter från ClaudeMonitor. Användningshistoriken på disken behålls.",
+  "account.remove.confirm.remove": "Ta bort",
+  "account.remove.confirm.cancel": "Avbryt",
+  "prefs.tab.general": "Allmänt",
+  "prefs.tab.add": "Lägg till konto",
+  "prefs.button.add_account": "Lägg till konto",
+  "prefs.button.delete_account": "Ta bort konto",
+  "prefs.show_graph": "Visa användningsgraf",
+  "prefs.compact_services": "Kompakt tjänstelista",
+  "services.all_operational": "Alla system i drift"
 }

@@ -111,5 +111,27 @@
   "menu.history.quarantinedCount": {
     "one": "%1$ld in quarantaine geplaatst geschiedenisbestand",
     "other": "%1$ld in quarantaine geplaatste geschiedenisbestanden"
-  }
+  },
+  "credentials.field.name": "Profielnaam:",
+  "credentials.field.name_placeholder": "Persoonlijk",
+  "credentials.alert.duplicate_org.title": "Dubbel account",
+  "credentials.alert.duplicate_org.message": "Een ander profiel gebruikt deze organisatie-ID al.",
+  "menu.account.current": "Account: %@",
+  "menu.account.add": "Account toevoegen…",
+  "menu.account.remove": "‘%@’ verwijderen…",
+  "menu.more": "Meer",
+  "addaccount.window.title": "Account toevoegen",
+  "addaccount.button.add": "Toevoegen",
+  "addaccount.button.cancel": "Annuleren",
+  "account.remove.confirm.title": "Account verwijderen?",
+  "account.remove.confirm.message": "Hiermee worden ‘%@’ en de bijbehorende inloggegevens uit ClaudeMonitor verwijderd. De gebruiksgeschiedenis op de schijf blijft behouden.",
+  "account.remove.confirm.remove": "Verwijderen",
+  "account.remove.confirm.cancel": "Annuleren",
+  "prefs.tab.general": "Algemeen",
+  "prefs.tab.add": "Account toevoegen",
+  "prefs.button.add_account": "Account toevoegen",
+  "prefs.button.delete_account": "Account verwijderen",
+  "prefs.show_graph": "Gebruiksgrafiek tonen",
+  "prefs.compact_services": "Compacte servicelijst",
+  "services.all_operational": "Alle systemen operationeel"
 }

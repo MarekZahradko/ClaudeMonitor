@@ -117,5 +117,27 @@
     "one": "%1$ld karanténní soubor historie",
     "few": "%1$ld karanténní soubory historie",
     "other": "%1$ld karanténních souborů historie"
-  }
+  },
+  "credentials.field.name": "Název profilu:",
+  "credentials.field.name_placeholder": "Osobní",
+  "credentials.alert.duplicate_org.title": "Duplicitní účet",
+  "credentials.alert.duplicate_org.message": "Toto ID organizace už používá jiný profil.",
+  "menu.account.current": "Účet: %@",
+  "menu.account.add": "Přidat účet…",
+  "menu.account.remove": "Odebrat „%@“…",
+  "addaccount.window.title": "Přidat účet",
+  "addaccount.button.add": "Přidat",
+  "addaccount.button.cancel": "Zrušit",
+  "account.remove.confirm.title": "Odebrat účet?",
+  "account.remove.confirm.message": "Odebere „%@“ a jeho přihlašovací údaje z ClaudeMonitoru. Historie využití na disku zůstane.",
+  "account.remove.confirm.remove": "Odebrat",
+  "account.remove.confirm.cancel": "Zrušit",
+  "prefs.tab.general": "Obecné",
+  "prefs.tab.add": "Přidat účet",
+  "prefs.button.add_account": "Přidat účet",
+  "prefs.button.delete_account": "Smazat účet",
+  "prefs.show_graph": "Zobrazit graf využití",
+  "menu.more": "Více",
+  "services.all_operational": "Vše funguje normálně",
+  "prefs.compact_services": "Kompaktní seznam služeb"
 }

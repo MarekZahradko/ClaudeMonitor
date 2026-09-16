@@ -14,6 +14,7 @@ struct UsageCache {
     func didSelectAbout()
     func didSelectUsageWindow(_ sender: NSMenuItem)
     func didSelectSentinel()
+    func didSelectProfile(_ sender: NSMenuItem)
 }
 
 @MainActor
@@ -35,6 +36,7 @@ enum MenuBuilder {
     // Controls items
     static let updatedTag = 200
     static let historyHealthTag = 210
+    static let moreTag = 650
     static let refreshTag = 601
     static let preferencesTag = 602
     static let aboutTag = 603

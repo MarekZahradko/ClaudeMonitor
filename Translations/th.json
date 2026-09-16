@@ -107,5 +107,27 @@
   "menu.history.saveFailing": "การบันทึกประวัติล้มเหลว (ตั้งแต่ %@)",
   "menu.history.quarantinedCount": {
     "other": "ไฟล์ประวัติที่ถูกกักกัน %1$ld ไฟล์"
-  }
+  },
+  "credentials.field.name": "ชื่อโปรไฟล์:",
+  "credentials.field.name_placeholder": "ส่วนตัว",
+  "credentials.alert.duplicate_org.title": "บัญชีซ้ำ",
+  "credentials.alert.duplicate_org.message": "มีโปรไฟล์อื่นใช้รหัสองค์กรนี้อยู่แล้ว",
+  "menu.account.current": "บัญชี: %@",
+  "menu.account.add": "เพิ่มบัญชี…",
+  "menu.account.remove": "นำ “%@” ออก…",
+  "menu.more": "เพิ่มเติม",
+  "addaccount.window.title": "เพิ่มบัญชี",
+  "addaccount.button.add": "เพิ่ม",
+  "addaccount.button.cancel": "ยกเลิก",
+  "account.remove.confirm.title": "นำบัญชีออกหรือไม่",
+  "account.remove.confirm.message": "การดำเนินการนี้จะนำ “%@” และข้อมูลรับรองออกจาก ClaudeMonitor ประวัติการใช้งานบนดิสก์จะยังคงอยู่",
+  "account.remove.confirm.remove": "นำออก",
+  "account.remove.confirm.cancel": "ยกเลิก",
+  "prefs.tab.general": "ทั่วไป",
+  "prefs.tab.add": "เพิ่มบัญชี",
+  "prefs.button.add_account": "เพิ่มบัญชี",
+  "prefs.button.delete_account": "ลบบัญชี",
+  "prefs.show_graph": "แสดงกราฟการใช้งาน",
+  "prefs.compact_services": "รายการบริการแบบกระชับ",
+  "services.all_operational": "ระบบทั้งหมดทำงานปกติ"
 }

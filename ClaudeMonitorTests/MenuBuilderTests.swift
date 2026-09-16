@@ -10,6 +10,7 @@ private final class MockMenuActions: NSObject, MenuActions {
     @objc func didSelectAbout() {}
     @objc func didSelectUsageWindow(_ sender: NSMenuItem) {}
     @objc func didSelectSentinel() {}
+    @objc func didSelectProfile(_ sender: NSMenuItem) {}
 }
 
 @MainActor struct MenuBuilderTests {
@@ -60,20 +61,44 @@ private final class MockMenuActions: NSObject, MenuActions {
 
     // MARK: - Services Section
 
-    @Test func componentsAreSortedByName() {
+    @Test func affectedComponentsAreSortedByName() {
         let status = StatusSummary(
             components: [
-                StatusComponent(id: "1", name: "Console", status: .operational),
-                StatusComponent(id: "2", name: "API", status: .operational),
+                StatusComponent(id: "1", name: "Console", status: .partialOutage),
+                StatusComponent(id: "2", name: "API", status: .majorOutage),
             ],
             incidents: []
         )
-        let state = MonitorState(service: ServiceHealth(currentStatus: status))
-        let items = menuItems(for: state)
-        let serviceItems = items.filter { $0.title.contains("Operational") }
+        let items = menuItems(for: MonitorState(service: ServiceHealth(currentStatus: status)))
+        let serviceItems = items.filter { $0.tag >= MenuBuilder.serviceBaseTag && $0.tag < MenuBuilder.servicesPlaceholderTag }
         #expect(serviceItems.count == 2)
         #expect(serviceItems[0].title.contains("API"))
         #expect(serviceItems[1].title.contains("Console"))
+    }
+
+    @Test func allOperationalCollapsesToOneLine() {
+        let status = StatusSummary(
+            components: [
+                StatusComponent(id: "1", name: "API", status: .operational),
+                StatusComponent(id: "2", name: "Console", status: .operational),
+            ],
+            incidents: []
+        )
+        let items = menuItems(for: MonitorState(service: ServiceHealth(currentStatus: status)))
+        // Compact mode: no per-component rows — the section header carries an "all operational" subtitle.
+        #expect(!items.contains { $0.tag >= MenuBuilder.serviceBaseTag && $0.tag < MenuBuilder.servicesPlaceholderTag })
+    }
+
+    @Test func fullModeListsAllComponents() {
+        let status = StatusSummary(
+            components: [
+                StatusComponent(id: "1", name: "API", status: .operational),
+                StatusComponent(id: "2", name: "Console", status: .operational),
+            ],
+            incidents: []
+        )
+        let items = menuItems(for: MonitorState(service: ServiceHealth(currentStatus: status), compactServices: false))
+        #expect(items.filter { $0.tag >= MenuBuilder.serviceBaseTag && $0.tag < MenuBuilder.servicesPlaceholderTag }.count == 2)
     }
 
     // MARK: - Incidents Section
@@ -103,13 +128,20 @@ private final class MockMenuActions: NSObject, MenuActions {
 
     // MARK: - Controls Section
 
-    @Test func controlsIncludeRefreshAndPreferences() {
-        let state = MonitorState(lastRefreshed: Date())
-        let items = menuItems(for: state)
-        #expect(items.contains { $0.title == "Refresh Now" })
-        #expect(items.contains { $0.title == "Preferences" })
-        #expect(items.contains { $0.title == "About" })
-        #expect(items.contains { $0.title == "Quit" })
+    @Test func overflowMenuHasControlActions() {
+        let menu = MenuBuilder.makeOverflowMenu(target: target)
+        let titles = menu.items.map(\.title)
+        #expect(titles.contains("Refresh Now"))
+        #expect(titles.contains("Preferences"))
+        #expect(titles.contains("About"))
+        #expect(titles.contains("Quit"))
+    }
+
+    @Test func controlActionsNotInMainList() {
+        // They moved behind the header's "⋯" button.
+        let items = menuItems(for: MonitorState(lastRefreshed: Date()))
+        #expect(!items.contains { $0.title == "Refresh Now" })
+        #expect(!items.contains { $0.title == "Preferences" })
     }
 
     @Test func lastRefreshedTimestamp() {
@@ -350,5 +382,53 @@ private final class MockMenuActions: NSObject, MenuActions {
     @Test func noHistoryHealthItemWhenNothingToReport() {
         let state = MonitorState(history: HistoryHealth())
         #expect(MenuBuilder.historyHealthItem(state: state) == nil)
+    }
+
+    // MARK: - Account switcher
+
+    private func stateWithProfiles() -> MonitorState {
+        MonitorState(
+            profiles: ProfileSnapshot(
+                profiles: [
+                    Profile(id: "a", name: "Personal", organizationId: "org-a"),
+                    Profile(id: "b", name: "Work", organizationId: "org-b"),
+                ],
+                activeId: "b"
+            ),
+            hasCredentials: true
+        )
+    }
+
+    private func containsToggle(_ view: NSView?) -> Bool {
+        guard let view else { return false }
+        if view is AccountToggleView { return true }
+        return view.subviews.contains { containsToggle($0) }
+    }
+
+    @Test func accountToggleAbsentWithSingleProfile() {
+        let state = MonitorState(
+            profiles: ProfileSnapshot(profiles: [Profile(id: "a", name: "Personal", organizationId: "org-a")], activeId: "a"),
+            hasCredentials: true
+        )
+        // One account -> nothing to toggle between; the Usage header carries no switcher.
+        let header = menuItems(for: state).first { $0.tag == MenuBuilder.usageSectionTag }
+        #expect(!containsToggle(header?.view))
+    }
+
+    @Test func accountTogglePresentInUsageHeaderWithTwoProfiles() {
+        let header = menuItems(for: stateWithProfiles()).first { $0.tag == MenuBuilder.usageSectionTag }
+        #expect(containsToggle(header?.view), "the compact switcher must be embedded in the Usage header")
+    }
+
+    // MARK: - Graph visibility
+
+    @Test func graphShownByDefault() {
+        let state = MonitorState(usage: UsageSnapshot(currentUsage: UsageResponse(entries: [])), hasCredentials: true)
+        #expect(menuItems(for: state).contains { $0.tag == MenuBuilder.usageGraphTag })
+    }
+
+    @Test func graphHiddenWhenDisabled() {
+        let state = MonitorState(usage: UsageSnapshot(currentUsage: UsageResponse(entries: [])), hasCredentials: true, showGraph: false)
+        #expect(!menuItems(for: state).contains { $0.tag == MenuBuilder.usageGraphTag })
     }
 }

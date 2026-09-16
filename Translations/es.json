@@ -114,5 +114,27 @@
   "menu.history.quarantinedCount": {
     "one": "%1$ld archivo de historial en cuarentena",
     "other": "%1$ld archivos de historial en cuarentena"
-  }
+  },
+  "credentials.field.name": "Nombre del perfil:",
+  "credentials.field.name_placeholder": "Personal",
+  "credentials.alert.duplicate_org.title": "Cuenta duplicada",
+  "credentials.alert.duplicate_org.message": "Otro perfil ya usa este ID de organización.",
+  "menu.account.current": "Cuenta: %@",
+  "menu.account.add": "Añadir cuenta…",
+  "menu.account.remove": "Eliminar «%@»…",
+  "menu.more": "Más",
+  "addaccount.window.title": "Añadir cuenta",
+  "addaccount.button.add": "Añadir",
+  "addaccount.button.cancel": "Cancelar",
+  "account.remove.confirm.title": "¿Eliminar cuenta?",
+  "account.remove.confirm.message": "Esto elimina «%@» y sus credenciales de ClaudeMonitor. Su historial de uso en el disco se conserva.",
+  "account.remove.confirm.remove": "Eliminar",
+  "account.remove.confirm.cancel": "Cancelar",
+  "prefs.tab.general": "General",
+  "prefs.tab.add": "Añadir cuenta",
+  "prefs.button.add_account": "Añadir cuenta",
+  "prefs.button.delete_account": "Eliminar cuenta",
+  "prefs.show_graph": "Mostrar gráfico de uso",
+  "prefs.compact_services": "Lista de servicios compacta",
+  "services.all_operational": "Todos los sistemas operativos"
 }

@@ -107,5 +107,27 @@
   "menu.history.saveFailing": "歷史記錄儲存失敗（自 %@ 起）",
   "menu.history.quarantinedCount": {
     "other": "%1$ld 個已隔離的歷史記錄檔案"
-  }
+  },
+  "credentials.field.name": "設定檔名稱：",
+  "credentials.field.name_placeholder": "個人",
+  "credentials.alert.duplicate_org.title": "重複的帳戶",
+  "credentials.alert.duplicate_org.message": "另一個設定檔已在使用此組織 ID。",
+  "menu.account.current": "帳戶：%@",
+  "menu.account.add": "加入帳戶…",
+  "menu.account.remove": "移除「%@」…",
+  "menu.more": "更多",
+  "addaccount.window.title": "加入帳戶",
+  "addaccount.button.add": "加入",
+  "addaccount.button.cancel": "取消",
+  "account.remove.confirm.title": "移除帳戶？",
+  "account.remove.confirm.message": "這會將「%@」及其憑證從 ClaudeMonitor 移除。磁碟上的使用記錄會保留。",
+  "account.remove.confirm.remove": "移除",
+  "account.remove.confirm.cancel": "取消",
+  "prefs.tab.general": "一般",
+  "prefs.tab.add": "加入帳戶",
+  "prefs.button.add_account": "加入帳戶",
+  "prefs.button.delete_account": "刪除帳戶",
+  "prefs.show_graph": "顯示用量圖表",
+  "prefs.compact_services": "精簡服務清單",
+  "services.all_operational": "所有系統正常"
 }

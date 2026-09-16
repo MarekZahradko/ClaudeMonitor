@@ -114,5 +114,27 @@
   "menu.history.quarantinedCount": {
     "one": "%1$ld unter Quarantäne gestellte Verlaufsdatei",
     "other": "%1$ld unter Quarantäne gestellte Verlaufsdateien"
-  }
+  },
+  "credentials.field.name": "Profilname:",
+  "credentials.field.name_placeholder": "Persönlich",
+  "credentials.alert.duplicate_org.title": "Doppeltes Konto",
+  "credentials.alert.duplicate_org.message": "Ein anderes Profil verwendet bereits diese Organisations-ID.",
+  "menu.account.current": "Konto: %@",
+  "menu.account.add": "Konto hinzufügen…",
+  "menu.account.remove": "„%@“ entfernen…",
+  "menu.more": "Mehr",
+  "addaccount.window.title": "Konto hinzufügen",
+  "addaccount.button.add": "Hinzufügen",
+  "addaccount.button.cancel": "Abbrechen",
+  "account.remove.confirm.title": "Konto entfernen?",
+  "account.remove.confirm.message": "Entfernt „%@“ und dessen Anmeldedaten aus ClaudeMonitor. Der Nutzungsverlauf auf der Festplatte bleibt erhalten.",
+  "account.remove.confirm.remove": "Entfernen",
+  "account.remove.confirm.cancel": "Abbrechen",
+  "prefs.tab.general": "Allgemein",
+  "prefs.tab.add": "Konto hinzufügen",
+  "prefs.button.add_account": "Konto hinzufügen",
+  "prefs.button.delete_account": "Konto löschen",
+  "prefs.show_graph": "Nutzungsdiagramm anzeigen",
+  "prefs.compact_services": "Kompakte Dienstliste",
+  "services.all_operational": "Alle Systeme betriebsbereit"
 }
