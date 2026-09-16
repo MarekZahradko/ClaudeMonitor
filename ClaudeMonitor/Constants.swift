@@ -166,6 +166,29 @@ enum Constants {
         /// Support — mirrors `History.productionSubdirectory`.
         static let stateSubdirectory = "ClaudeMonitor/energy"
         static let stateFileName = "scan-state.json"
+
+        // MARK: - Energy coefficients
+        //
+        // Anchor: Oviedo et al. (Microsoft), "Energy use of AI inference, efficiency pathways, and
+        // test-time scaling", Joule 10(8):102430, 2026. Models >200B on H100: median 0.31 Wh per
+        // query, interquartile range 0.16–0.60, at a median of 300 output tokens. The paper fixes
+        // input length and approximates effective length by output length, on the grounds that
+        // output tokens dominate.
+        //
+        // These are FULL-NODE figures: host CPU and DRAM, idle capacity and PUE are already inside
+        // them. That is the accounting boundary this feature reports, and it is why `pue` below is
+        // 1.0 — applying a datacentre multiplier on top would count it twice.
+        //
+        // Kept as three separate numbers rather than one value with a spread, because the low and
+        // high are measured quartiles, not a symmetric error bar.
+        static let anchorWhPerQueryLow = 0.16
+        static let anchorWhPerQueryMedian = 0.31
+        static let anchorWhPerQueryHigh = 0.60
+        /// Output tokens the anchor's per-query figures correspond to.
+        static let anchorOutputTokensPerQuery = 300.0
+        /// Already contained in the anchor above. Present so a GPU-level anchor could be swapped in
+        /// without the multiplier being lost, not because it should be changed to 1.12 here.
+        static let pue = 1.0
     }
 
     enum History {
