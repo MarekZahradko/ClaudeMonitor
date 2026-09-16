@@ -118,29 +118,23 @@ import Foundation
     /// The path under test:
     ///   restartPolling() → reloadCredentials() → orgId changed →
     ///   usageHistory.switchOrganization(newOrgId) → windowAnalyses = []
-    @Test func credentialSwapClearsWindowAnalyses() async {
+    @Test func credentialSwapClearsWindowAnalyses() async throws {
         let mockStatus = MockStatusService()
         let mockUsage = MockUsageService()
         let mockIdleProvider = MockSystemIdleProvider()
 
-        // Credentials are read via a @Sendable closure — use a class wrapper so we can
-        // mutate the orgId from the test body without a Sendable capture violation.
+        // Editing the active profile's org and restarting polling is the real switch path.
         let orgAlpha = "org-alpha-\(UUID().uuidString)"
         let orgBeta = "org-beta-\(UUID().uuidString)"
-        final class OrgIdBox: @unchecked Sendable { var value: String; init(_ v: String) { value = v } }
-        let orgIdBox = OrgIdBox(orgAlpha)
+        let store = makeTestProfileStore(secrets: InMemorySecrets())
+        let profile = try store.addProfile(name: "Acct", organizationId: orgAlpha, cookie: "test-cookie")
+        store.setActive(id: profile.id)
         let fixture = UsageHistoryTestFixture()
         let coordinator = DataCoordinator(
             statusService: mockStatus,
             usageService: mockUsage,
             systemIdleProvider: mockIdleProvider,
-            loadCredential: { key in
-                switch key {
-                case Constants.Keychain.cookieString: return "test-cookie"
-                case Constants.Keychain.organizationId: return orgIdBox.value
-                default: return nil
-                }
-            },
+            profileStore: store,
             usageHistory: fixture.history
         )
 
@@ -157,7 +151,7 @@ import Foundation
                 "windowAnalyses must be non-empty after a successful refresh")
 
         // Swap to a different org ID and restart polling (which calls reloadCredentials()).
-        orgIdBox.value = orgBeta
+        try store.updateProfile(id: profile.id, name: "Acct", organizationId: orgBeta, cookie: "test-cookie")
         coordinator.restartPolling()
 
         // After restartPolling() with a different org ID, reloadCredentials() detects the
@@ -274,20 +268,15 @@ import Foundation
 
         let orgA = "org-a-\(UUID().uuidString)"
         let orgB = "org-b-\(UUID().uuidString)"
-        final class OrgIdBox: @unchecked Sendable { var value: String; init(_ v: String) { value = v } }
-        let orgIdBox = OrgIdBox(orgA)
+        let store = makeTestProfileStore(secrets: InMemorySecrets())
+        let profile = try store.addProfile(name: "Acct", organizationId: orgA, cookie: "test-cookie")
+        store.setActive(id: profile.id)
         let fixture = UsageHistoryTestFixture()
         let coordinator = DataCoordinator(
             statusService: mockStatus,
             usageService: mockUsage,
             systemIdleProvider: mockIdleProvider,
-            loadCredential: { key in
-                switch key {
-                case Constants.Keychain.cookieString: return "test-cookie"
-                case Constants.Keychain.organizationId: return orgIdBox.value
-                default: return nil
-                }
-            },
+            profileStore: store,
             usageHistory: fixture.history
         )
 
@@ -317,7 +306,7 @@ import Foundation
         // Switch the live coordinator to org B while org A's fetch is still suspended, via the
         // production org-switch path (reloadCredentials(), called synchronously by
         // restartPolling()).
-        orgIdBox.value = orgB
+        try store.updateProfile(id: profile.id, name: "Acct", organizationId: orgB, cookie: "test-cookie")
         coordinator.restartPolling()
         // restartPolling() also spawns a new poll task; cancel it immediately so it doesn't
         // perform its own concurrent refresh() and confound this test's single controlled race.

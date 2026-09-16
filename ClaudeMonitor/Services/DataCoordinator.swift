@@ -7,7 +7,7 @@ final class DataCoordinator {
     let usageService: any UsageFetching
     let systemIdleProvider: any SystemIdleProviding
     let pathMonitor: any PathMonitoring
-    let loadCredential: @Sendable (String) -> String?
+    let profileStore: ProfileStore
     var pollTask: Task<Void, Never>?
     var demoRotationIndex = 0
     var loadedCredentials: (cookie: String, orgId: String)?
@@ -44,14 +44,14 @@ final class DataCoordinator {
         usageService: any UsageFetching = UsageService(),
         systemIdleProvider: any SystemIdleProviding = SystemIdleService(),
         pathMonitor: any PathMonitoring = PathMonitor(),
-        loadCredential: @escaping @Sendable (String) -> String? = { EncryptedDefaultsService.load(key: $0) },
+        profileStore: ProfileStore = ProfileStore(),
         usageHistory: UsageHistory = UsageHistory(baseDirectory: UsageHistory.productionBaseDirectory)
     ) {
         self.statusService = statusService
         self.usageService = usageService
         self.systemIdleProvider = systemIdleProvider
         self.pathMonitor = pathMonitor
-        self.loadCredential = loadCredential
+        self.profileStore = profileStore
         self.usageHistory = usageHistory
         reloadCredentials()
         historyMaintenanceTask = Task { [weak self, usageHistory] in
@@ -109,8 +109,11 @@ extension DataCoordinator {
                 persistenceFailingSince: usageHistory.persistenceFailingSince,
                 quarantinedFileCount: quarantinedFileCount
             ),
+            profiles: ProfileSnapshot(profiles: profileStore.profiles, activeId: profileStore.activeId),
             lastRefreshed: lastRefreshed,
-            hasCredentials: hasCredentials
+            hasCredentials: hasCredentials,
+            showGraph: Constants.Preferences.isUsageGraphEnabled(),
+            compactServices: Constants.Preferences.isServicesCompact()
         )
     }
 }
@@ -122,9 +125,9 @@ extension DataCoordinator {
 
     func reloadCredentials() {
         guard !Constants.Demo.isActive,
-              let cookie = loadCredential(Constants.Keychain.cookieString),
-              let orgId = loadCredential(Constants.Keychain.organizationId),
-              !cookie.isEmpty, !orgId.isEmpty else {
+              let profile = profileStore.activeProfile,
+              let cookie = profileStore.activeCookie,
+              !cookie.isEmpty else {
             if loadedCredentials != nil {
                 usageHistory.switchOrganization(nil)
                 windowAnalyses = []
@@ -132,6 +135,7 @@ extension DataCoordinator {
             loadedCredentials = nil
             return
         }
+        let orgId = profile.organizationId
         let previousOrgId = loadedCredentials?.orgId
         loadedCredentials = (cookie, orgId)
         if orgId != previousOrgId {
