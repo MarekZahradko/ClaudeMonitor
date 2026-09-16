@@ -155,6 +155,19 @@ enum Constants {
         static let rotationInterval: TimeInterval = 5
     }
 
+    enum Energy {
+        /// Claude Code's session logs: one JSON object per line, appended live while it runs.
+        static let logsDirectory = "~/.claude/projects"
+        static let logFileExtension = "jsonl"
+        /// Read size per step. Large enough that syscall overhead disappears, small enough that a
+        /// scan of a 700 MB archive never holds more than a chunk plus one partial line.
+        static let chunkSize = 256 * 1024
+        /// Where the scan offsets, dedup hashes and carried totals live, relative to Application
+        /// Support — mirrors `History.productionSubdirectory`.
+        static let stateSubdirectory = "ClaudeMonitor/energy"
+        static let stateFileName = "scan-state.json"
+    }
+
     enum History {
         static let deduplicationInterval: TimeInterval = 30
         static let gapThreshold: TimeInterval = 300
