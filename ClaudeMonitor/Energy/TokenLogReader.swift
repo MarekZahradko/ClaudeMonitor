@@ -137,15 +137,13 @@ enum TokenLogReader {
 
     static func parse(line: String) -> ParseResult {
         guard line.contains(#""usage""#) else { return .notAnAssistantResponse }
-        guard let data = line.data(using: .utf8) else { return .unparsable }
+        guard let data = line.data(using: .utf8),
+              let decoded = try? JSONDecoder.iso8601WithFractionalSeconds.decode(RawLine.self, from: data)
+        else { return .unparsable }
+        return result(for: decoded)
+    }
 
-        let decoded: RawLine
-        do {
-            decoded = try JSONDecoder.iso8601WithFractionalSeconds.decode(RawLine.self, from: data)
-        } catch {
-            return .unparsable
-        }
-
+    private static func result(for decoded: RawLine) -> ParseResult {
         guard decoded.type == assistantType,
               let message = decoded.message,
               let usage = message.usage else { return .notAnAssistantResponse }

@@ -35,6 +35,8 @@ struct TokenUsage: Equatable, Sendable, Codable {
     }
 }
 
+// MARK: - Entry
+
 /// One deduplicated API response worth of tokens.
 struct TokenLogEntry: Equatable, Sendable {
     let dedupKey: String
@@ -47,6 +49,8 @@ struct TokenLogEntry: Equatable, Sendable {
     /// as a flat per-token cost understates the total by 34% and individual responses by up to 3.8×.
     var contextOutputProduct: Int { usage.contextRead * usage.output }
 }
+
+// MARK: - Totals
 
 /// Aggregated token counts plus the bookkeeping needed to trust them.
 ///
@@ -61,6 +65,8 @@ struct TokenTotals: Equatable, Sendable, Codable {
     /// Σ(context × output), carried separately because it cannot be recovered from the sums above.
     var contextOutputProduct = 0
 }
+
+// MARK: - Scan state
 
 /// Deterministic 64-bit hash (FNV-1a).
 ///
@@ -88,6 +94,8 @@ struct TokenScanState: Equatable, Codable, Sendable {
     var seen: Set<UInt64> = []
     var totals = TokenTotals()
 }
+
+// MARK: - Accumulator
 
 /// Accumulates log lines, collapsing responses it has already counted.
 ///

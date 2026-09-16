@@ -26,7 +26,6 @@ extension MenuBuilder {
     static let headerTextColor = NSColor.secondaryLabelColor
 
     private static let headerHeight: CGFloat = 22
-    private static let headerEdgePadding: CGFloat = 14
     /// Minimum clearance kept between the header's labels and the toggle floating between them.
     private static let headerToggleClearance: CGFloat = 20
 
@@ -62,16 +61,16 @@ extension MenuBuilder {
     ) -> CGFloat {
         let toggleWidth = toggle?.fittingSize.width ?? 0
         let reserve = toggleWidth > 0 ? toggleWidth + headerToggleClearance : 0
-        return headerEdgePadding + left.frame.width + headerToggleClearance
-            + reserve + right.frame.width + headerEdgePadding
+        return rowTrailingInset + left.frame.width + headerToggleClearance
+            + reserve + right.frame.width + rowTrailingInset
     }
 
     private static func assembleHeader(
         width: CGFloat, left: NSTextField, right: NSTextField, toggle: AccountToggleView?
     ) -> NSView {
-        left.frame.origin = NSPoint(x: headerEdgePadding, y: centeredY(forHeight: left.frame.height))
+        left.frame.origin = NSPoint(x: rowTrailingInset, y: centeredY(forHeight: left.frame.height))
         right.frame.origin = NSPoint(
-            x: width - headerEdgePadding - right.frame.width,
+            x: width - rowTrailingInset - right.frame.width,
             y: centeredY(forHeight: right.frame.height)
         )
 

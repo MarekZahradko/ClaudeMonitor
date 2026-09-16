@@ -112,7 +112,10 @@ final class EnergyMonitor {
     private func guardAgainstProductionUseUnderTest() {
         guard ProcessInfo.processInfo.environment[BuildInfo.underTestEnvVar] != nil else { return }
         if logsDirectory == Self.productionLogsDirectory || stateFile == Self.productionStateFile {
-            preconditionFailure("EnergyMonitor must not be started against the real logs or state file during tests — inject temporary directories instead.")
+            preconditionFailure(
+                "EnergyMonitor must not be started against the real logs or state file during"
+                + " tests — inject temporary directories instead."
+            )
         }
     }
 }
