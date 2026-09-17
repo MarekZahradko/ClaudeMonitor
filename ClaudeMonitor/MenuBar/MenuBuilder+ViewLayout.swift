@@ -26,47 +26,37 @@ extension MenuBuilder {
     static let headerTextColor = NSColor.secondaryLabelColor
 
     private static let headerHeight: CGFloat = 22
-    /// Minimum clearance kept between the header's labels and the toggle floating between them.
+    /// Minimum clearance kept between a header's two labels.
     private static let headerToggleClearance: CGFloat = 20
 
-    static func makeHeaderView(title: String, subtitle: String, switcher: HeaderAccountSwitcher? = nil) -> NSView {
+    static func makeHeaderView(
+        title: String,
+        subtitle: String,
+        subtitleColor: NSColor = headerTextColor
+    ) -> NSView {
         let left = headerLabel(title)
-        let right = headerLabel(subtitle)
+        let right = headerLabel(subtitle, color: subtitleColor)
         right.autoresizingMask = .minXMargin
-        let toggle = switcher.map { makeAccountToggle($0) }
-        let width = headerMinWidth(left: left, right: right, toggle: toggle)
-        return assembleHeader(width: width, left: left, right: right, toggle: toggle)
+        return assembleHeader(width: headerMinWidth(left: left, right: right), left: left, right: right)
     }
 
-    private static func headerLabel(_ text: String) -> NSTextField {
+    private static func headerLabel(_ text: String, color: NSColor = headerTextColor) -> NSTextField {
         let label = NSTextField(labelWithString: text)
         label.font = NSFont.menuFont(ofSize: 0)
-        label.textColor = headerTextColor
+        label.textColor = color
         label.sizeToFit()
         return label
     }
 
-    private static func makeAccountToggle(_ switcher: HeaderAccountSwitcher) -> AccountToggleView {
-        let control = AccountToggleView(frame: .zero)
-        control.configure(names: switcher.names, selectedIndex: switcher.activeIndex)
-        control.onSelect = switcher.onSelect
-        control.autoresizingMask = [.minXMargin, .maxXMargin]
-        return control
-    }
-
-    /// The width at which a centered toggle still clears both labels. The real menu is usually
-    /// wider than this, and the toggle floats centered inside whatever width it gets.
-    private static func headerMinWidth(
-        left: NSTextField, right: NSTextField, toggle: AccountToggleView?
-    ) -> CGFloat {
-        let toggleWidth = toggle?.fittingSize.width ?? 0
-        let reserve = toggleWidth > 0 ? toggleWidth + headerToggleClearance : 0
-        return rowTrailingInset + left.frame.width + headerToggleClearance
-            + reserve + right.frame.width + rowTrailingInset
+    /// The width at which both labels still clear each other. The real menu is usually wider, and
+    /// the trailing label stays pinned to the right edge of whatever width it gets.
+    private static func headerMinWidth(left: NSTextField, right: NSTextField) -> CGFloat {
+        rowTrailingInset + left.frame.width + headerToggleClearance
+            + right.frame.width + rowTrailingInset
     }
 
     private static func assembleHeader(
-        width: CGFloat, left: NSTextField, right: NSTextField, toggle: AccountToggleView?
+        width: CGFloat, left: NSTextField, right: NSTextField
     ) -> NSView {
         left.frame.origin = NSPoint(x: rowTrailingInset, y: centeredY(forHeight: left.frame.height))
         right.frame.origin = NSPoint(
@@ -78,15 +68,6 @@ extension MenuBuilder {
         view.autoresizingMask = .width
         view.addSubview(left)
         view.addSubview(right)
-
-        if let toggle {
-            let size = toggle.fittingSize
-            toggle.frame = NSRect(
-                x: (width - size.width) / 2, y: centeredY(forHeight: size.height),
-                width: size.width, height: size.height
-            )
-            view.addSubview(toggle)
-        }
         return view
     }
 
@@ -94,12 +75,17 @@ extension MenuBuilder {
         (headerHeight - height) / 2
     }
 
-    static func sectionHeader(_ title: String, subtitle: String? = nil, tag: Int, switcher: HeaderAccountSwitcher? = nil) -> NSMenuItem {
+    static func sectionHeader(
+        _ title: String,
+        subtitle: String? = nil,
+        subtitleColor: NSColor = headerTextColor,
+        tag: Int
+    ) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         item.isEnabled = false
         item.tag = tag
         if let subtitle {
-            item.view = makeHeaderView(title: title, subtitle: subtitle, switcher: switcher)
+            item.view = makeHeaderView(title: title, subtitle: subtitle, subtitleColor: subtitleColor)
         }
         return item
     }

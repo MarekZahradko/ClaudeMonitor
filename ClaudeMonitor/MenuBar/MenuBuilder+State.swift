@@ -9,7 +9,6 @@ extension MenuBuilder {
         } else {
             reconcile(menu: menu, desired: desired)
             if let usageHeaderItem = menu.item(withTag: usageSectionTag) {
-                let usageTitle = String(localized: "menu.section.usage", bundle: .module)
                 let switcher = accountSwitcher(state: state, target: target)
                 if state.polling.isAnyServiceStale {
                     if usageHeaderItem.view != nil { usageHeaderItem.view = nil }
@@ -19,7 +18,9 @@ extension MenuBuilder {
                     // place. Rebuilding the header view here would re-measure and shift the open menu.
                     toggle.configure(names: switcher.names, selectedIndex: switcher.activeIndex)
                 } else {
-                    usageHeaderItem.view = makeHeaderView(title: usageTitle, subtitle: "Claude Monitor", switcher: switcher)
+                    usageHeaderItem.view = makeTitleHeaderView(
+                        title: appTitle, badge: usageBadge(state: state), switcher: switcher
+                    )
                 }
             }
             if let servicesHeaderItem = menu.item(withTag: servicesSectionTag) {
@@ -27,7 +28,11 @@ extension MenuBuilder {
                 let comps = state.service.currentStatus?.components ?? []
                 let allOp = !comps.isEmpty && comps.allSatisfy { $0.status == .operational }
                 if state.compactServices && allOp {
-                    servicesHeaderItem.view = makeHeaderView(title: servicesTitle, subtitle: String(localized: "services.all_operational", bundle: .module))
+                    servicesHeaderItem.view = makeHeaderView(
+                        title: servicesTitle,
+                        subtitle: servicesOperationalSubtitle,
+                        subtitleColor: .servicesHealthy
+                    )
                 } else if servicesHeaderItem.view != nil {
                     servicesHeaderItem.view = nil
                 }
@@ -57,13 +62,7 @@ extension MenuBuilder {
             items.append(separator(tag: separatorAfterConnectivityTag))
         }
 
-        let usageSubtitle = state.polling.isAnyServiceStale ? nil : "Claude Monitor"
-        items.append(sectionHeader(
-            String(localized: "menu.section.usage", bundle: .module),
-            subtitle: usageSubtitle,
-            tag: usageSectionTag,
-            switcher: accountSwitcher(state: state, target: target)
-        ))
+        items.append(usageHeaderItem(state: state, target: target))
         let (usageMenuItems, cache) = usageItems(state: state, target: target)
         items.append(contentsOf: usageMenuItems)
 
@@ -75,9 +74,13 @@ extension MenuBuilder {
 
         let components = state.service.currentStatus?.components ?? []
         let allOperational = !components.isEmpty && components.allSatisfy { $0.status == .operational }
-        let servicesSubtitle = (state.compactServices && allOperational)
-            ? String(localized: "services.all_operational", bundle: .module) : nil
-        items.append(sectionHeader(String(localized: "menu.section.services", bundle: .module), subtitle: servicesSubtitle, tag: servicesSectionTag))
+        let servicesSubtitle = (state.compactServices && allOperational) ? servicesOperationalSubtitle : nil
+        items.append(sectionHeader(
+            String(localized: "menu.section.services", bundle: .module),
+            subtitle: servicesSubtitle,
+            subtitleColor: .servicesHealthy,
+            tag: servicesSectionTag
+        ))
         items.append(contentsOf: serviceItems(state: state))
 
         if let incidents = state.service.currentStatus?.incidents, !incidents.isEmpty {
@@ -91,9 +94,8 @@ extension MenuBuilder {
         items.append(separator(tag: separatorAfterServicesTag))
         items.append(contentsOf: controlItems(state: state))
 
-        // The action items (Refresh / Preferences / About / Quit) live in a native submenu behind a
-        // "⋯" row — a status-bar dropdown reliably expands a submenu item, unlike a button popping
-        // its own menu from inside the tracking menu.
+        // The action items (Refresh / Preferences / About / Quit) sit in a footer bar of their own,
+        // each firing directly on click — see `footerActionsItem`.
         items.append(separator(tag: separatorControlsTag))
         items.append(footerActionsItem(target: target))
 
