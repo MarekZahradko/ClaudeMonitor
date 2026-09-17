@@ -120,7 +120,8 @@ extension DataCoordinator {
             lastRefreshed: lastRefreshed,
             hasCredentials: hasCredentials,
             showGraph: Constants.Preferences.isUsageGraphEnabled(),
-            compactServices: Constants.Preferences.isServicesCompact()
+            compactServices: Constants.Preferences.isServicesCompact(),
+            showBlockedCountdown: Constants.Preferences.isBlockedCountdownShown()
         )
     }
 }

@@ -137,6 +137,17 @@ enum Constants {
         static func isServicesCompact(defaults: UserDefaults = .standard) -> Bool {
             defaults.object(forKey: compactServices) == nil ? true : defaults.bool(forKey: compactServices)
         }
+
+        static let showBlockedCountdown = "showBlockedCountdown"
+
+        /// Whether the menu bar keeps showing the stop icon and the countdown while a window is
+        /// blocked. Turned off, the title goes empty and only the status icon remains; the
+        /// countdown still appears on the dropdown's badge, and the countdown timer keeps running
+        /// either way — it is also what triggers the refresh when the block expires.
+        /// Absent defaults to shown, so nobody's menu bar changes without them asking.
+        static func isBlockedCountdownShown(defaults: UserDefaults = .standard) -> Bool {
+            defaults.object(forKey: showBlockedCountdown) == nil ? true : defaults.bool(forKey: showBlockedCountdown)
+        }
     }
 
     enum Sounds {

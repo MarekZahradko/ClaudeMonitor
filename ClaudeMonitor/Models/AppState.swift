@@ -104,6 +104,7 @@ struct MonitorState: Sendable, Equatable {
     let hasCredentials: Bool
     let showGraph: Bool
     let compactServices: Bool
+    let showBlockedCountdown: Bool
 
     init(
         usage: UsageSnapshot = UsageSnapshot(),
@@ -115,7 +116,8 @@ struct MonitorState: Sendable, Equatable {
         lastRefreshed: Date? = nil,
         hasCredentials: Bool = false,
         showGraph: Bool = true,
-        compactServices: Bool = true
+        compactServices: Bool = true,
+        showBlockedCountdown: Bool = true
     ) {
         self.usage = usage
         self.service = service
@@ -127,6 +129,7 @@ struct MonitorState: Sendable, Equatable {
         self.hasCredentials = hasCredentials
         self.showGraph = showGraph
         self.compactServices = compactServices
+        self.showBlockedCountdown = showBlockedCountdown
     }
 }
 

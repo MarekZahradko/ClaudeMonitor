@@ -78,6 +78,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
     private let resetSoundCheckbox = NSButton(checkboxWithTitle: String(localized: "prefs.reset_sound", bundle: .module), target: nil, action: nil)
     private let showGraphCheckbox = NSButton(checkboxWithTitle: String(localized: "prefs.show_graph", bundle: .module), target: nil, action: nil)
     private let compactServicesCheckbox = NSButton(checkboxWithTitle: String(localized: "prefs.compact_services", bundle: .module), target: nil, action: nil)
+    private let blockedCountdownCheckbox = NSButton(checkboxWithTitle: String(localized: "prefs.show_blocked_countdown", bundle: .module), target: nil, action: nil)
     private let retentionLabel = NSTextField(labelWithString: String(localized: "prefs.retention.label", bundle: .module))
     private let retentionField = NSTextField()
     private let retentionStepper = NSStepper()
@@ -278,7 +279,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
 
     private func makeGeneralView() -> NSView {
         let container = NSView()
-        for control in [launchAtLoginCheckbox, resetSoundCheckbox, showGraphCheckbox, compactServicesCheckbox, retentionLabel, retentionField, retentionStepper] {
+        for control in [launchAtLoginCheckbox, resetSoundCheckbox, showGraphCheckbox, compactServicesCheckbox, blockedCountdownCheckbox, retentionLabel, retentionField, retentionStepper] {
             control.translatesAutoresizingMaskIntoConstraints = false
             container.addSubview(control)
         }
@@ -301,11 +302,14 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
             compactServicesCheckbox.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
             compactServicesCheckbox.topAnchor.constraint(equalTo: showGraphCheckbox.bottomAnchor, constant: 10),
 
+            blockedCountdownCheckbox.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            blockedCountdownCheckbox.topAnchor.constraint(equalTo: compactServicesCheckbox.bottomAnchor, constant: 10),
+
             retentionLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
             retentionLabel.centerYAnchor.constraint(equalTo: retentionField.centerYAnchor),
 
             retentionField.leadingAnchor.constraint(equalTo: retentionLabel.trailingAnchor, constant: 8),
-            retentionField.topAnchor.constraint(equalTo: compactServicesCheckbox.bottomAnchor, constant: 16),
+            retentionField.topAnchor.constraint(equalTo: blockedCountdownCheckbox.bottomAnchor, constant: 16),
             retentionField.widthAnchor.constraint(equalToConstant: 46),
 
             retentionStepper.leadingAnchor.constraint(equalTo: retentionField.trailingAnchor, constant: 4),
@@ -326,6 +330,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
         resetSoundCheckbox.state = defaults.bool(forKey: Constants.Preferences.resetSoundEnabled) ? .on : .off
         showGraphCheckbox.state = Constants.Preferences.isUsageGraphEnabled(defaults: defaults) ? .on : .off
         compactServicesCheckbox.state = Constants.Preferences.isServicesCompact(defaults: defaults) ? .on : .off
+        blockedCountdownCheckbox.state = Constants.Preferences.isBlockedCountdownShown(defaults: defaults) ? .on : .off
 
         // While a decrease-confirmation sheet is on screen, its own completion handler is the
         // only thing allowed to resolve `currentRetentionYears`/the displayed fields — see
@@ -565,6 +570,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
         defaults.set(resetSoundCheckbox.state == .on, forKey: Constants.Preferences.resetSoundEnabled)
         defaults.set(showGraphCheckbox.state == .on, forKey: Constants.Preferences.showUsageGraph)
         defaults.set(compactServicesCheckbox.state == .on, forKey: Constants.Preferences.compactServices)
+        defaults.set(blockedCountdownCheckbox.state == .on, forKey: Constants.Preferences.showBlockedCountdown)
     }
 
     @objc private func didTapDelete() {
