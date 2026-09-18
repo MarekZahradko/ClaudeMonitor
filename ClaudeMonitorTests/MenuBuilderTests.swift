@@ -499,7 +499,25 @@ struct MenuBuilderHeaderShadeTests {
         let found = labels(in: view)
         #expect(found.count == 2)
         #expect(found.first?.textColor == MenuBuilder.headerTextColor)
-        #expect(found.last?.textColor == .servicesHealthy)
+        #expect(found.last?.textColor == .restingAccent)
+    }
+
+    /// The bar and the services status are meant to be one green, not two that happen to match
+    /// today. Measured against `barFillColor` rather than against the constant, so renaming or
+    /// re-pointing either surface alone fails here.
+    @Test func theServicesStatusUsesTheSameGreenAsARestingBar() throws {
+        let state = MonitorState(
+            service: ServiceHealth(currentStatus: StatusSummary(
+                components: [StatusComponent(id: "1", name: "API", status: .operational)],
+                incidents: []
+            )),
+            compactServices: true
+        )
+        let (items, _) = MenuBuilder.buildDesiredItems(state: state, target: HeaderShadeMockActions())
+        let header = try #require(items.first { $0.tag == MenuBuilder.servicesSectionTag })
+        let view = try #require(header.view)
+        let status = try #require(labels(in: view).last)
+        #expect(status.textColor == Formatting.barFillColor(percent: 60))
     }
 }
 

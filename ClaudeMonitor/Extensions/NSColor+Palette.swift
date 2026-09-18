@@ -1,20 +1,16 @@
 import AppKit
 
-/// The two accents the dropdown paints with.
+/// The accent the dropdown paints with.
 ///
-/// Both exist because the system equivalents are tuned to catch the eye on a white sheet, and this
-/// UI is a small dark panel the user has open all day: `systemBlue` on a grey bar and `systemGreen`
-/// on a one-line status both read as neon against it. These sit a step back — same hues, lower
-/// saturation, darker in light mode where the background stops doing the work.
+/// It exists because the system equivalent is tuned to catch the eye on a white sheet, and this UI
+/// is a small dark panel the user has open all day: `systemGreen` on a one-line status reads as
+/// neon against it. This sits a step back — same hue, lower saturation, darker in light mode where
+/// the background stops doing the work.
 extension NSColor {
-    /// Fill of a usage bar that still has headroom.
-    static let usageBar = dynamic(
-        dark: NSColor(srgbRed: 0.353, green: 0.639, blue: 0.702, alpha: 1),
-        light: NSColor(srgbRed: 0.196, green: 0.443, blue: 0.529, alpha: 1)
-    )
-
-    /// "All systems operational" — the only green in the menu.
-    static let servicesHealthy = dynamic(
+    /// The calm state wherever the dropdown shows one: "All systems operational", and the fill of a
+    /// usage bar that still has headroom. Deliberately one colour for both rather than two that
+    /// happen to match — a window at `blockedUtilization` leaves it for `systemRed`.
+    static let restingAccent = dynamic(
         dark: NSColor(srgbRed: 0.353, green: 0.667, blue: 0.475, alpha: 1),
         light: NSColor(srgbRed: 0.180, green: 0.455, blue: 0.290, alpha: 1)
     )

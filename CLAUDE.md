@@ -131,7 +131,7 @@ Projection-based styling: implied rate = `utilization / timeElapsed`, projected 
 
 Special case: utilization ≥ 100% → always red (blocked). `timeRemaining = 0` → always normal (about to reset).
 
-The dropdown's progress bars follow the same rule in their own way: `Formatting.barFillColor` is blue while a window has headroom and red at `blockedUtilization`. The reference design showed a blue bar at 100%, which would have been the single surface disagreeing with everything above — so the threshold is shared, not a second literal.
+The dropdown's progress bars follow the same rule in their own way: `Formatting.barFillColor` is `restingAccent` — the same green as the services status — while a window has headroom, and red at `blockedUtilization`. The reference design showed a blue bar at 100%, which would have been the single surface disagreeing with everything above — so the threshold is shared, not a second literal.
 
 Window durations are parsed from API key names by `WindowKeyParser` (e.g., `five_hour` → 5h = 18000s).
 

@@ -31,7 +31,7 @@ extension MenuBuilder {
                     servicesHeaderItem.view = makeHeaderView(
                         title: servicesTitle,
                         subtitle: servicesOperationalSubtitle,
-                        subtitleColor: .servicesHealthy
+                        subtitleColor: .restingAccent
                     )
                 } else if servicesHeaderItem.view != nil {
                     servicesHeaderItem.view = nil
@@ -78,7 +78,7 @@ extension MenuBuilder {
         items.append(sectionHeader(
             String(localized: "menu.section.services", bundle: .module),
             subtitle: servicesSubtitle,
-            subtitleColor: .servicesHealthy,
+            subtitleColor: .restingAccent,
             tag: servicesSectionTag
         ))
         items.append(contentsOf: serviceItems(state: state))
